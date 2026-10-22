@@ -31,3 +31,6 @@ online_retail_II.xlsx
 retail.parquet
 __pycache__/
 .env*
+
+# Local Claude Code config
+.claude/

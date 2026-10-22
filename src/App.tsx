@@ -1,122 +1,62 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import { loadData } from './data';
+import { Scene } from './scene/Scene';
+import { useGame } from './store';
+import { Controls } from './ui/Controls';
+import { Hud } from './ui/Hud';
+import { EndScreen, Toast, Tooltip } from './ui/Overlays';
+import { Scoreboard } from './ui/Scoreboard';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const ready = useGame(s => s.data !== null);
+  const hoverSlot = useGame(s => s.hoverSlot);
+  const [error, setError] = useState<string | null>(null);
+  const [pointer, setPointer] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    loadData().then(d => useGame.getState().init(d)).catch(e => setError(String(e.message ?? e)));
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') useGame.setState({ selected: null, preview: null }); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  if (error) return <div className="center-msg">Could not load data: {error}</div>;
+  if (!ready) return <div className="center-msg">Loading November 2011 orders…</div>;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <div className="app">
+      <header className="topbar">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+          <h1>Warehouse Digital Twin</h1>
+          <p>Re-slot 100 products and replay real November 2011 orders from Online Retail II</p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </header>
+      <div className="stage">
+        <Scene onHover={(slot, e) => {
+          if (e) setPointer({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY });
+          if (slot !== useGame.getState().hovered) hoverSlot(slot);
+        }} />
+        <Hud />
+        <Legend />
+        <Tooltip x={pointer.x} y={pointer.y} />
+        <Toast />
+      </div>
+      <Controls />
+      <Scoreboard />
+      <EndScreen />
+    </div>
+  );
 }
 
-export default App
+function Legend() {
+  const heatmap = useGame(s => s.heatmap);
+  return (
+    <div className="panel legend">
+      {heatmap
+        ? <><i className="sw heat" /> visits during replay</>
+        : <><i className="sw pop" /> train-week picks (low → high)</>}
+      <span><i className="sw sel" /> selected</span>
+      <span><i className="sw partner" /> often ordered together</span>
+    </div>
+  );
+}
