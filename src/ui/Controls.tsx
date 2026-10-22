@@ -1,44 +1,51 @@
-// Controls (Section 6.4): Replay, Reset, Load baseline, Mode, Speed, Heatmap, AI Suggest
-import { SPEEDS, useGame } from '../store';
-import { pct } from './format';
+// Controls: watch Pip (replay), speed, busy shelves (heatmap), ask the robot (AI Suggest)
+import { pointsFor } from '../game/scoring';
+import { useGame } from '../store';
+
+const SPEED_LABELS: Record<number, string> = { 1: 'Walk', 10: 'Run', 50: 'Zoom' };
 
 export function Controls() {
   const g = useGame();
   const { ai } = g;
+  const robotSaved = ai.stats && g.baseline ? g.baseline.totalDist - ai.stats.totalDist : 0;
   return (
-    <div className="panel controls">
+    <div className="controls">
       <div className="group">
-        <button className="primary" onClick={g.togglePlay}>{g.playing ? 'Pause' : g.live?.done || !g.live ? 'Replay' : 'Resume'}</button>
+        <button className="primary" onClick={g.togglePlay}>
+          {g.playing ? 'Pause Pip' : g.live && !g.live.done ? 'Keep going' : 'Watch Pip pick'}
+        </button>
         <div className="seg" role="group" aria-label="Speed">
-          {SPEEDS.map(n => (
-            <button key={n} className={g.speed === n ? 'on' : ''} onClick={() => g.setSpeed(n)}>{n}×</button>
+          {([1, 10, 50] as const).map(n => (
+            <button key={n} className={g.speed === n ? 'on' : ''} aria-pressed={g.speed === n} onClick={() => g.setSpeed(n)}>
+              {SPEED_LABELS[n]}
+            </button>
           ))}
         </div>
-        <button className={g.heatmap ? 'on' : ''} onClick={g.toggleHeatmap} title="Recolour racks by visits during the replay">Heatmap</button>
+        <button className={g.heatmap ? 'on' : ''} aria-pressed={g.heatmap} onClick={g.toggleHeatmap}
+          title="Colour shelves by how often Pip visits them while you watch">Busy shelves</button>
       </div>
       <div className="group">
-        <div className="seg" role="group" aria-label="Mode">
-          <button className={g.mode === 'challenge' ? 'on' : ''} onClick={() => g.setMode('challenge')}>Challenge</button>
-          <button className={g.mode === 'sandbox' ? 'on' : ''} onClick={() => g.setMode('sandbox')}>Sandbox</button>
-        </div>
-        <button onClick={g.reset}>Reset</button>
-        <button onClick={g.loadBaseline}>Load baseline</button>
+        {g.mode === 'challenge' && !g.ended && g.swapsUsed > 0 && (
+          <button className="done-btn" onClick={g.finish}>I'm done</button>
+        )}
+        <button onClick={g.reset}>Start over</button>
+        {g.mode === 'sandbox' && <button onClick={g.loadBaseline}>Load starting shelves</button>}
       </div>
-      <div className="group ai-group">
-        <button className="ai-btn" onClick={g.runAI} disabled={ai.status === 'running'}>
-          {ai.status === 'running' ? 'Optimising…' : ai.status === 'done' ? 'Run AI Suggest again' : 'AI Suggest'}
+      <div className="group robot">
+        <button className="robot-btn" onClick={g.runAI} disabled={ai.status === 'running'}>
+          {ai.status === 'running' ? 'Robot is thinking…' : ai.status === 'done' ? 'Ask the robot again' : 'Ask the robot'}
         </button>
         {ai.status === 'running' && (
-          <div className="progress" aria-label="AI progress"><div style={{ width: `${ai.progress * 100}%` }} /></div>
+          <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ai.progress * 100)}>
+            <div style={{ width: `${ai.progress * 100}%` }} />
+          </div>
         )}
-        {ai.status === 'done' && ai.stats && g.baseline && (
-          <>
-            <span className="ai-result">
-              {pct(ai.stats.totalDist / g.baseline.totalDist - 1)} vs Baseline on the unseen test week
-              <small> (train: {pct(ai.trainGain!)} · {ai.it.toLocaleString()} swaps tried)</small>
-            </span>
-            <button onClick={g.loadAI} title="Opens the AI layout in Sandbox mode">View AI layout</button>
-          </>
+        {ai.status === 'done' && ai.stats && (
+          <span className="robot-result">
+            The robot tried {ai.it.toLocaleString()} swaps and scored <b>{pointsFor(robotSaved).toLocaleString()}</b>.
+            You only get 10!
+            {' '}<button className="link" onClick={g.loadAI}>See its shelves</button>
+          </span>
         )}
       </div>
     </div>

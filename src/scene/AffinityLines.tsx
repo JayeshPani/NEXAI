@@ -13,7 +13,7 @@ export function AffinityLines() {
   return (
     <group>
       {data.topPartners[at[selected]].map(p => (
-        <Line key={p} points={[top(selected), top(assign[p])]} color="#d2a8ff" lineWidth={3} dashed dashSize={0.4} gapSize={0.2} />
+        <Line key={p} points={[top(selected), top(assign[p])]} color="#9b5de5" lineWidth={3} dashed dashSize={0.4} gapSize={0.2} />
       ))}
     </group>
   );

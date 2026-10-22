@@ -6,9 +6,9 @@ import { samePickPoint } from '../engine/layouts';
 import { useGame } from '../store';
 import { BAY_LEN, RACK_DEPTH, RACK_HEIGHT, rackCenter } from './coords';
 
-const COLD = new Color('#1f4e79'), MID = new Color('#3a9e9a'), HOT = new Color('#f0a030');
-const HEAT_LO = new Color('#262c36'), HEAT_HI = new Color('#ff4d4d');
-const SELECTED = new Color('#ffffff'), PARTNER = new Color('#d2a8ff'), DISABLED = new Color('#4a4f57');
+const COLD = new Color('#4f9be0'), MID = new Color('#ffc93c'), HOT = new Color('#e4572e');
+const HEAT_LO = new Color('#e8edf2'), HEAT_HI = new Color('#c2185b');
+const SELECTED = new Color('#33a867'), PARTNER = new Color('#9b5de5'), DISABLED = new Color('#b8bec6');
 
 export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void }) {
   const ref = useRef<InstancedMesh>(null);
@@ -52,7 +52,7 @@ export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEve
         else if (samePickPoint(s, selected)) c.copy(DISABLED);   // not a valid target
         else if (partnerSlots.has(s)) c.copy(PARTNER);
       }
-      if (s === hovered && s !== selected) c.offsetHSL(0, 0, 0.18);
+      if (s === hovered && s !== selected) c.offsetHSL(0, 0, -0.12);
       mesh.setColorAt(s, c);
     }
     mesh.instanceColor!.needsUpdate = true;
@@ -67,7 +67,7 @@ export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEve
       onPointerOut={() => onHover(null)}
     >
       <boxGeometry args={[RACK_DEPTH * 0.92, RACK_HEIGHT, BAY_LEN * 0.92]} />
-      <meshStandardMaterial />
+      <meshStandardMaterial roughness={0.7} />
     </instancedMesh>
   );
 }

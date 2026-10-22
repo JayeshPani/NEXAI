@@ -1,4 +1,4 @@
-# Warehouse Digital Twin — 3D Picking Floor Game
+# Pick & Pack Puzzle — Warehouse Digital Twin
 
 NEXAI 2026 Hackathon · Track 4 · PS 4.2
 
@@ -10,13 +10,24 @@ orders and scores walking distance and pick time before vs after.
 
 ## How to play
 
-- **Challenge (default):** start from the Baseline layout with **10 swaps** and try to beat it on the test week.
-  Click a rack to select it, click another to swap. Hover first to see the Δ distance preview.
-  Purple dashed lines point to the products most often ordered together with the selected one.
-- **Sandbox:** start from the Original layout with unlimited swaps.
-- **AI Suggest:** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and scored on the test week.
-- **Replay** walks 25 sample orders from the test week at 1×, 10× or 50×. **Heatmap** recolours racks by visits.
-- Esc deselects. Swapping the left and right slots of one bay changes nothing (same pick point) and costs no swap.
+The game opens on a menu: **Play the puzzle**, **Free play**, **How to play** and **High scores**.
+
+- **Play the puzzle (Challenge mode):** start from the Starting shelves (the plan's Baseline) with **10 swaps**.
+  Click a shelf to pick it up, point at another to see the points the swap would earn, click to swap.
+  Purple dashed lines point to the products most often bought together with the selected one.
+- **Scoring:** 1 point per metre Pip (the picker) no longer walks over all test-week orders.
+  Stars: 1 for any saving, 2 at 1,000 points, 3 at 2,500 points. A greedy 10-swap search reaches about 3,750,
+  which set these thresholds. Each swap shows a pop-up ("+320 Great swap!" / "−40 Oops, more walking").
+  Finish early with **I'm done**.
+- **High scores:** the top 8 puzzle scores, saved in this browser only (localStorage).
+- **Free play (Sandbox mode):** start from the Jumbled shelves (the plan's Original) with unlimited swaps.
+- **Ask the robot (AI Suggest):** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and
+  scored on the test week.
+- **Watch Pip pick** replays 25 sample orders from the test week (Walk 1×, Run 10×, Zoom 50×).
+  **Busy shelves** recolours racks by visits during the replay.
+- **Grown-up stats** shows the plan's full scoreboard (total, mean, median, p90, average time).
+- Esc puts a shelf back. Swapping the two shelves facing each other across an aisle changes nothing
+  (same pick point) and costs no swap.
 
 ## Data rules
 

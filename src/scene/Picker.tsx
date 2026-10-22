@@ -86,14 +86,25 @@ export function Picker() {
 
   return (
     <group ref={group}>
+      {/* Pip: green vest, round head, yellow hard hat, eyes facing the camera */}
       <mesh position={[0, 0.75, 0]}>
-        <capsuleGeometry args={[0.28, 0.9, 4, 12]} />
-        <meshStandardMaterial color="#3fb950" />
+        <capsuleGeometry args={[0.3, 0.9, 4, 12]} />
+        <meshStandardMaterial color="#33a867" />
       </mesh>
-      <mesh position={[0, 1.65, 0]}>
-        <sphereGeometry args={[0.24, 16, 12]} />
-        <meshStandardMaterial color="#f2cc8f" />
+      <mesh position={[0, 1.68, 0]}>
+        <sphereGeometry args={[0.3, 20, 16]} />
+        <meshStandardMaterial color="#f6c99b" />
       </mesh>
+      <mesh position={[0, 1.86, 0]}>
+        <sphereGeometry args={[0.33, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#ffc93c" />
+      </mesh>
+      {[-0.11, 0.11].map(x => (
+        <mesh key={x} position={[x, 1.72, 0.27]}>
+          <sphereGeometry args={[0.05, 10, 8]} />
+          <meshBasicMaterial color="#22395b" />
+        </mesh>
+      ))}
     </group>
   );
 }

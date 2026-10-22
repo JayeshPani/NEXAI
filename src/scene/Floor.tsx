@@ -4,13 +4,13 @@ import { CanvasTexture, SRGBColorSpace } from 'three';
 import { AISLES, L, PITCH, pts, DOCK } from '../engine/geometry';
 import { CENTER, to3 } from './coords';
 
-const LINE = '#e3b341';
+const LINE = '#ffc93c';
 
 function Stripe({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
   return (
     <mesh position={to3(x, y, 0.01)} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial color={LINE} transparent opacity={0.55} />
+      <meshBasicMaterial color={LINE} />
     </mesh>
   );
 }
@@ -22,14 +22,14 @@ export function Floor() {
     <group>
       <mesh position={[CENTER[0], 0, CENTER[2]]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width + 12, L + 10]} />
-        <meshStandardMaterial color="#1b2129" />
+        <meshStandardMaterial color="#dfe6ee" />
       </mesh>
-      {[...Array(AISLES).keys()].map(a => <Stripe key={a} x={a * PITCH} y={L / 2} w={0.08} h={L} />)}
-      <Stripe x={width / 2} y={0} w={width + 0.08} h={0.08} />
-      <Stripe x={width / 2} y={L} w={width + 0.08} h={0.08} />
+      {[...Array(AISLES).keys()].map(a => <Stripe key={a} x={a * PITCH} y={L / 2} w={0.14} h={L} />)}
+      <Stripe x={width / 2} y={0} w={width + 0.14} h={0.14} />
+      <Stripe x={width / 2} y={L} w={width + 0.14} h={0.14} />
       <mesh position={to3(dock.x, dock.y - 1.6, 0.4)}>
         <boxGeometry args={[3.2, 0.8, 1.6]} />
-        <meshStandardMaterial color="#2f81f7" />
+        <meshStandardMaterial color="#3d7be0" />
       </mesh>
       <Label text="PACKING" position={to3(dock.x, dock.y - 1.6, 0.81)} />
     </group>
