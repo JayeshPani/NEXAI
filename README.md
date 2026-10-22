@@ -7,7 +7,12 @@ Christmas-décor wholesaler in its November rush (the company name is ours; the 
 from Online Retail II). A 3D twin of the picking floor replays those orders. You rearrange 100 products; the twin
 replays exactly the same orders and scores walking distance and pick time before vs after.
 
-**Live:** https://nexai-jayesh-panis-projects.vercel.app
+**Live:** https://nexai-jayesh-panis-projects.vercel.app · **Team:** Jayesh Pani, Megha Gautam ·
+**Pitch, demo script and Q&A:** [docs/PITCH.md](docs/PITCH.md)
+
+The project merges two branches of the same plan: this one (modules, product photos, time rules with forklift
+handling levels, deployment) and Megha Gautam's (explained AI Suggest with a business case, hidden test-week score,
+batch picking, peak-day shift, new-product slotting, Python data tests, pitch kit). Commits carry both authors.
 
 ## Modules
 
@@ -15,9 +20,9 @@ The app opens on a home screen with three separate modules, one per must-have re
 
 | # | Module | Requirement | Code |
 |---|---|---|---|
-| 1 | **Order data** | Pre-processing: one month of order lines turned into JSON (top 100 products, pick counts, orders) | `preprocess.py`, `src/modules/data` |
-| 2 | **Warehouse replay** | 3D grid warehouse (racks, aisles, packing dock, animated picker) replaying orders with live distance and time | `src/modules/twin` |
-| 3 | **Slotting challenge** | Swap products between slots, replay the same orders, compare walking distance and pick time against the automatic baseline | `src/modules/game` |
+| 1 | **Order data** | Pre-processing: one month of order lines turned into JSON (top 100 products, pick counts, orders), plus cost class, FL, categories and the time rules | `preprocess.py`, `src/modules/data` |
+| 2 | **Warehouse replay** | 3D warehouse (racks with product photos, aisles, packing dock, animated picker) replaying orders with live distance and time. Stretch goals: **batch picking** and a **peak shift with several pickers and congestion** | `src/modules/twin` |
+| 3 | **Slotting challenge** | Swap products between slots, replay the same orders, compare walking and pick time against the automatic baseline. Plus **AI Suggest** (explained moves, payback), **new-product slotting**, heatmap and leaderboard | `src/modules/game` |
 
 `src/core` holds what all three share: the simulator (`engine/`: geometry, routing, scoring, layouts) and data
 loading. The replay module is read-only: no swapping, scoring or optimiser. Everything game-related lives in
@@ -30,20 +35,43 @@ The challenge opens on its own menu: **Challenge**, **Sandbox**, **How to play**
 
 - **Challenge:** start from the Baseline (fast movers nearest the dock) with **10 swaps**. Click a shelf or its
   product card to select it, hover another to preview the time the swap saves or costs, click to swap. Dashed lines
-  link the products most often ordered with the selected one.
-- **Scoring:** 1 point per second of picking time saved over all test-week orders (walking + forklift access).
-  Rating: Bronze for any saving, Silver at 1,500, Gold at 4,000. A greedy 10-swap search reaches about 6,480,
-  which set these thresholds. **Finish** ends early.
-- **Leaderboard:** the top 8 challenge scores, saved in this browser only (localStorage).
-- **Sandbox:** start from the as-received layout (Original) with unlimited swaps.
-- **Run AI Suggest:** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and scored on the
-  test week.
+  link the products most often ordered with the selected one. **Undo** (Ctrl/⌘+Z) gives a swap back.
+- **Plan on the past, scored on the future:** previews and the live planning score use 1–21 Nov; the score is the
+  unseen week (22–30 Nov) and stays hidden until **Submit**, the same hold-out AI Suggest uses.
+- **Scoring:** 1 point per second of picking time saved on the test week (walking + forklift access).
+  Rating: Bronze for any saving, Silver at 1,500, Gold at 4,000. A greedy 10-swap search reaches about 6,960,
+  which set these thresholds. **Keep ABC zones** optionally keeps each product in its velocity zone.
+- **Leaderboard:** the top 8 challenge scores with their layouts (Load opens one in Sandbox), this browser only.
+- **Sandbox:** start from the as-received layout (Original) with unlimited swaps; scores shown live.
+- **AI Suggest** (side panel): simulated annealing over 45,000 swaps in a Web Worker (about 5 s), from the Baseline,
+  on the train weeks only, then scored on the test week. Plans charge for each move (Max saving 0 s, Balanced 300 s,
+  Fewer moves 450 s of train-week time per moved product), then moves that don't pay are undone. Every move is
+  explained (bought-together partner, forklift item to an aisle end, or closer to the dock), with a business case:
+  hours and £ per year, re-slotting effort and payback (editable assumptions).
+- **New product** (side panel): a product with no history is estimated from look-alikes (shared name words and
+  category: picks, orders it joins, cost class, FL); the slowest mover goes to reserve; every shelf is tested on
+  the real orders; **Place it** opens a what-if copy in Sandbox, **Back to the real warehouse** restores it.
 - **Replay** walks 25 sample orders from the test week at 1×, 10× or 50×.
 - **Colour by** Category, Class, FL, Picks or Busy (visits during the replay). **All aisles / 1–5** moves the camera
   to the whole floor or one aisle.
 - **Detailed stats** shows the plan's full scoreboard (time and walking: mean, median, p90).
 - Esc deselects. Shelves facing each other across an aisle share a pick point, so swapping them changes nothing and
   costs no swap.
+
+## Replay scenarios (module 2)
+
+- **Order replay:** 25 sample test-week orders, one picker, with a pick list (photo, class, FL, seconds per item).
+- **Batch picking:** carts of 2–5 orders (≤ 40 lines, never across days), first come or proximity (the oldest order
+  seeds a cart; the order adding the least walking joins). Compares both reference layouts; replays 25 carts in 3D.
+  Every line is still picked on its own; sorting at the dock is not included.
+- **Peak shift:** the busiest test-week day, or the 2–3 busiest merged into one shift (up to 329 real orders at their
+  real times), from 08:00 against a 15:00–17:00 courier cut-off. 1–4 pickers take the oldest waiting order (or a
+  4-order cart), pick and pack (90 s an order). A step-by-step simulation moves every picker along the aisles;
+  **congestion**: a picker walking within 1.5 m of another picker in the same aisle slows to 0.35 m/s. Reports
+  on-time share, last order packed, average wait, minutes lost to congestion and the no-congestion result, and
+  replays every picker in 3D against a shift clock (`src/core/engine/shift.ts`).
+
+Both scenarios run on the **As received** or **Baseline** layout; player and AI layouts stay in module 3.
 
 ## Product photos
 
@@ -61,8 +89,9 @@ are in `public/products/credits.json` and under **Photo credits** in module 1.
   of the form five digits plus up to two letters.
 - Stock codes are upper-cased and trimmed so variants such as 85049a and 85049A merge.
 - Invoices that were later cancelled are still counted as picks: the goods were picked before the return.
-- Month used: November 2011. **Train = 1–21 Nov (1,613 orders), Test = 22–30 Nov (735 orders).**
+- Month used: November 2011. **Train = 1–21 Nov (1,617 orders), Test = 22–30 Nov (735 orders).**
 - Top 100 products are chosen by pick frequency (order lines, not units) in the train weeks, so the test week stays unseen.
+  Ties are broken by stock code, so the output is deterministic.
 - Order lines for products outside the top 100 are dropped; orders left empty are dropped. Large wholesale orders
   are kept and reported via median and p90.
 - Affinity (products ordered together) and the Baseline are computed from the train weeks only.
@@ -122,21 +151,33 @@ sit, so slotting now has two goals: fast movers near the dock, and forklift item
 
 ## Results (test week, 735 orders)
 
+Unseen week 22–30 Nov. AI Suggest is the reproducible seed-1 run of the Balanced plan (57 moves); live runs vary.
+
 | Layout | Total time | Time / order | Median | p90 | Total walk | Walk / order | Time vs Original |
 |---|---|---|---|---|---|---|---|
-| Original (sorted by StockCode) | 186,452 s | 253.7 s | 176.4 s | 503.0 s | 51,723 m | 70.4 m | — |
-| Baseline (fastest movers nearest the dock) | 184,645 s | 251.2 s | 177.8 s | 497.6 s | 49,659 m | 67.6 m | −1.0% |
+| Original (sorted by StockCode) | 187,608 s | 255.2 s | 178.8 s | 504.4 s | 51,844 m | 70.5 m | — |
+| Baseline (fastest movers nearest the dock) | 184,924 s | 251.6 s | 176.8 s | 494.0 s | 49,414 m | 67.2 m | −1.4% |
 | Best Challenge layout | _fill in after play-testing_ | | | | | | |
-| AI Suggest (one 5 s run) | 172,291 s | 234.4 s | 163.6 s | 466.6 s | 45,025 m | 61.3 m | −7.6% |
+| AI Suggest (Balanced, seed 1) | 173,188 s | 235.6 s | 163.6 s | 468.6 s | 45,461 m | 61.9 m | −7.7% |
 
-AI Suggest is randomised, so each run differs. Runs beat the Baseline by about 6–8% of total time on the unseen test
-week. It is seeded from the Baseline, minimises total time on the train weeks only, and its starting temperature is
-set so that roughly half of worsening moves are accepted. The Baseline only orders by pick frequency, so it ignores
-forklift access, which is why the optimiser has more to gain than walking alone suggests.
+- **AI vs Baseline:** −6.3% time, −8.0% walking. Plans over seeds 1–3: Max saving −7.0% to −8.1% (92–97 moves),
+  Balanced −5.7% to −6.9% (50–57 moves), Fewer moves −3.6% to −4.4% (26–33 moves).
+- **Batch picking, 4-order carts:** first come −53% walking vs Original single-order picking; proximity −60.3%
+  (Original), −61.4% (Baseline), −63.7% (AI layout). Time per order 255 s → 199 s (AI + proximity).
+- **Peak shift ×3 (329 orders, 17:00 cut-off, congestion on):**
+
+| Pickers, cart | Baseline on time | AI layout on time | Lost to congestion (Baseline) |
+|---|---:|---:|---:|
+| 2, single orders | 62% | 64% | 11 min |
+| 3, single orders | 84% | 87% | 22 min |
+| 3, carts of 4 | 90% | 91% | 9 min |
+| 4, single orders | 99% | 99% | 34 min |
+
+More pickers ship more, but lose more time meeting in aisles; carts cut both trips and congestion.
 
 ## Run locally
 
-Requires Node 22.12+ (CI uses Node 24) and Python 3.10+ with `pandas openpyxl pyarrow`.
+Requires Node 22.12+ (CI uses Node 24) and Python 3.10+ (`pip install -r requirements.txt`).
 
 ```bash
 npm ci
@@ -148,6 +189,7 @@ To regenerate the data, put `online_retail_II.xlsx` in the project root and run:
 ```bash
 python3 preprocess.py
 python3 scripts/validate_data.py
+python3 -m pytest -q tests
 ```
 
 ## Tests
@@ -158,9 +200,11 @@ npm test
 
 Vitest covers the Section 5.4 checks: `leg()` symmetry, waypoint length equal to scored distance, same-aisle
 distance equal to |Δy|, no path through a rack, Baseline walks less than Original on train and test, deterministic
-scoring, `swapDelta` + commit equal to a full rescore (time and distance), the time rules, the optimizer and the
-module boundaries. `scripts/validate_data.py` checks the JSON
-contracts and the train/test hold-out.
+scoring, `swapDelta` + commit equal to a full rescore (time and distance), the time rules, the optimiser (rules,
+determinism, hold-out, pruning, explanations, business case), the challenge rules (hidden score, swap limit, undo,
+ABC zones), batch picking, the peak shift (timing, congestion, staffing), new-product slotting, photo coverage and
+the module boundaries. `tests/test_preprocess.py` (pytest) checks every data rule on a hand-made sheet, and
+`scripts/validate_data.py` checks the committed JSON and the train/test hold-out; both run in CI.
 
 ## CI/CD
 

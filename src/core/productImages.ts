@@ -43,7 +43,7 @@ export const PRODUCT_TYPES: [string, RegExp][] = [
   ['playing-cards', /CARDS|CARD GAME/],
   ['harmonica', /HARMONICA/],
   ['knitting-nancy', /KNITTING/],
-  ['colour-pencils', /PENCILS/],
+  ['colour-pencils', /PENCIL/],
 ];
 
 export function productType(p: Product): string {

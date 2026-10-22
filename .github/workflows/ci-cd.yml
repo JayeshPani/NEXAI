@@ -41,6 +41,10 @@ jobs:
           if [ -f preprocess.py ]; then python -m py_compile preprocess.py; else echo "::notice::preprocess.py not committed yet"; fi
       - name: Validate public/data JSON (schemas, train/test split, train-only top 100 and affinity)
         run: python scripts/validate_data.py public/data
+      - name: Data rules on a hand-made sheet (pytest)
+        run: |
+          pip install --quiet pandas pytest
+          python -m pytest -q tests
 
   web:
     name: Lint, typecheck, test, build
