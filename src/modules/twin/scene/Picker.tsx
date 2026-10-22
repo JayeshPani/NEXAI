@@ -27,7 +27,7 @@ function timeline(slotsPath: number[], pickAt: (slot: number) => number): Seg[] 
   return segs;
 }
 
-export function Picker({ orders, getAssign, pick }: { orders: Order[]; getAssign: () => number[]; pick: number[][] }) {
+export function Picker({ orders, getAssign, pick }: { orders: Order[]; getAssign: () => readonly number[]; pick: number[][] }) {
   const group = useRef<Group>(null);
   const replayId = useReplay(s => s.replayId);
   const st = useRef({ order: -1, segs: [] as Seg[], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1, stop: -1, totalDist: 0, totalTime: 0 });
@@ -49,7 +49,9 @@ export function Picker({ orders, getAssign, pick }: { orders: Order[]; getAssign
       s.order = i; s.seg = 0; s.segT = 0; s.t = 0; s.dist = 0; s.visited = -1; s.stop = -1;
       const assign = getAssign(), at: number[] = [];
       assign.forEach((slot, p) => (at[slot] = p));
-      s.segs = timeline(routeOrder(slotsOf(orders[i], assign)).path, slot => pick[at[slot]][slot]);
+      const linesAt = new Map<number, number>();   // a cart can hold several lines of one product
+      for (const l of orders[i].lines) linesAt.set(l.p, (linesAt.get(l.p) ?? 0) + 1);
+      s.segs = timeline(routeOrder(slotsOf(orders[i], assign)).path, slot => pick[at[slot]][slot] * (linesAt.get(at[slot]) ?? 1));
     };
     if (s.order < 0) startOrder(0);
 

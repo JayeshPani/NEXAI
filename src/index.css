@@ -332,3 +332,25 @@ button.block { width: 100%; }
   .game-body.with-side { grid-template-columns: 1fr; }
   .side { border-left: 0; border-top: 1px solid var(--line); max-height: 60vh; }
 }
+
+/* ---------- Module 2: batch picking and peak shift panels ---------- */
+.ops { display: grid; gap: 10px; margin-bottom: 14px; }
+.ops h3 { margin: 0; font-size: 22px; }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.field .seg button { padding: 5px 9px; font-size: 13px; }
+.ops-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ops-table th, .ops-table td { padding: 4px 6px; text-align: right; vertical-align: top; border-bottom: 1px solid var(--line-2); }
+.ops-table thead th { color: var(--muted); font-weight: 600; }
+.ops-table tbody th { text-align: left; }
+.ops-table td b { display: block; font-size: 13px; }
+.ops-table td small { display: block; color: var(--muted); }
+.ops-table td small.good { color: var(--good); }
+.ops-table tr.current th { color: var(--ink); }
+.ops-table td.hl { background: #fff5d6; box-shadow: inset 0 -2px 0 var(--accent); }
+.legend-inline { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; margin: 0; }
+.legend-inline span { display: inline-flex; align-items: center; gap: 4px; }
+.twin .picklist { width: auto; }
+.twin-body { grid-template-columns: minmax(0, 1fr) 340px; }
+.shift-clock .bad b, .shift-clock .bad { color: var(--bad); }
+.topbar .seg button { padding: 5px 10px; }

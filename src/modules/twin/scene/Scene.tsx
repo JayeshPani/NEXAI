@@ -14,8 +14,8 @@ import { useReplay } from '../replayStore';
 import { ShelfCards } from './ShelfCards';
 import { CENTER } from './coords';
 
-export function WarehouseScene({ racks, orders, getAssign, children }: {
-  racks: RacksProps; orders: Order[]; getAssign: () => number[]; children?: ReactNode;
+export function WarehouseScene({ racks, orders, getAssign, children, picker = true }: {
+  racks: RacksProps; orders: Order[]; getAssign: () => readonly number[]; children?: ReactNode; picker?: boolean;
 }) {
   const data = useData();
   return (
@@ -28,7 +28,7 @@ export function WarehouseScene({ racks, orders, getAssign, children }: {
       <ShelfCards at={racks.at} selected={racks.selected} hovered={racks.hovered}
         onSlotClick={racks.onSlotClick} onSlotHover={racks.onSlotHover} />
       {children}
-      <Picker orders={orders} getAssign={getAssign} pick={data.pick} />
+      {picker && <Picker orders={orders} getAssign={getAssign} pick={data.pick} />}
       <CameraRig />
       <OrbitControls
         makeDefault target={CENTER} enablePan={false}
