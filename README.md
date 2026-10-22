@@ -8,7 +8,7 @@ from Online Retail II). A 3D twin of the picking floor replays those orders. You
 replays exactly the same orders and scores walking distance and pick time before vs after.
 
 **Live:** https://nexai-jayesh-panis-projects.vercel.app · **Team:** Jayesh Pani, Megha Gautam, Meet Kumar ·
-**Pitch, demo script and Q&A:** [docs/PITCH.md](docs/PITCH.md)
+**Pitch, demo script and Q&A:** [docs/PITCH.md](docs/PITCH.md) · **Development log:** [DEV_LOG.md](DEV_LOG.md)
 
 The project merges two branches of the same plan: this one (modules, product photos, time rules with forklift
 handling levels, deployment) and Megha Gautam's (explained AI Suggest with a business case, hidden test-week score,
@@ -28,6 +28,41 @@ The app opens on a home screen with three separate modules, one per must-have re
 loading. The replay module is read-only: no swapping, scoring or optimiser. Everything game-related lives in
 module 3, which reuses the replay's 3D scene. `src/modules/boundaries.test.ts` fails the build if a module
 imports one it shouldn't (core imports no module; data and replay never import the game).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  X["Online Retail II (.xlsx)<br/>UCI · CC BY 4.0"] --> P["preprocess.py (pandas)<br/>clean · Nov 2011 · learn 1–21 / test 22–30<br/>top 100 · classes · FL · bought-together"]
+  P --> J[("public/data/*.json<br/>products · orders · affinity")]
+  P -.checked by.-> V["validate_data.py + pytest"]
+  J --> E["src/core/engine (TypeScript)<br/>geometry · routing · time rules · layouts<br/>batching · peak shift"]
+  E --> M1["1 · Order data"]
+  E --> M2["2 · Warehouse replay<br/>3D twin · batch picking · peak shift"]
+  E --> M3["3 · Slotting challenge<br/>swaps · hidden test score · new items"]
+  M3 --> W["optimizer.worker.ts<br/>AI Suggest: annealing on learn weeks"]
+  M2 --> S["React Three Fiber scene<br/>racks · photo cards · pickers"]
+  M3 --> S
+  CI["GitHub Actions<br/>data check · lint · typecheck · tests · build"] --> VC["Vercel static site<br/>deploy · smoke test · promote"]
+```
+
+Everything runs in the browser: there is no backend and no secret is needed to run the app. The data is
+prepared once by `preprocess.py` and committed as JSON; the simulator, the optimiser (in a Web Worker so the
+scene never freezes) and the 3D scene all read the same engine, so the animation and the score cannot disagree.
+
+## Tech stack
+
+| Layer | Tools |
+|---|---|
+| Data preparation | Python 3.10+, pandas, openpyxl, pyarrow; pytest for the data rules |
+| Simulation engine | TypeScript (pure functions), Vitest |
+| 3D and UI | React 19, Three.js, React Three Fiber, drei, zustand; Vite 8 |
+| Optimiser | Simulated annealing in a Web Worker |
+| Quality | oxlint, TypeScript typecheck, Vitest, pytest, `scripts/validate_data.py` |
+| Delivery | GitHub Actions CI/CD, Vercel (static hosting) |
+
+Exact versions are in `package.json` and `requirements.txt`. Product photos come from Wikimedia Commons (credits in
+`public/products/credits.json`).
 
 ## How to play (module 3)
 
@@ -210,6 +245,39 @@ the module boundaries. `tests/test_preprocess.py` (pytest) checks every data rul
 
 GitHub Actions (`.github/workflows/ci-cd.yml`) runs the data check, lint, typecheck, tests and build on every push
 and PR. PRs get a Vercel preview; pushes to `main` deploy to production, are smoke-tested, then promoted.
+
+## Limitations
+
+- **Layout and company are ours.** The dataset has no shelf positions: the 100-slot floor, the "as received"
+  (Original) layout and the Holly & Ivy Gifts name are our assumptions. The orders are real.
+- **A 100-product pick zone.** The top 100 products cover about 21% of November's order lines, so results describe
+  this zone (about 92 orders a day), not the whole catalogue; the £ and hours in the business case scale with it.
+- **Modelled times.** Walking speed, handling time per FL level, the class check and forklift access are our rules
+  (see Time rules), the same for every layout. FL comes from units per order line, a proxy for cases and pallets;
+  real case sizes or weights would refine it.
+- **Simple routing and congestion.** Nearest-neighbour routing along aisle centerlines (the same for every
+  layout); congestion is a fixed slow-down when two pickers meet in an aisle. Racks have one level.
+- **What is not counted.** Sorting at the dock after batch picking, replenishment, and picker breaks.
+- **AI Suggest is randomised.** Each run differs a little; reported numbers come from seeded reference runs. Its
+  gain is measured on the unseen test week, which is smaller than its gain on the weeks it learned from.
+- **Photos show the type of item, not the exact product** (matched by name to 41 product types).
+- **Leaderboard** is stored in the browser (`localStorage`), so it belongs to one browser.
+
+## AI tools and dependencies
+
+- **AI coding assistant:** Claude Code (Anthropic), model Claude Opus 5.5, used by both developers for planning,
+  code, tests, data analysis and documentation. Every commit it helped with carries a
+  `Co-Authored-By: Claude Opus 5.5` line, so the git history shows where it was used. All generated code was reviewed
+  and runs through the same CI checks (lint, typecheck, 60+ tests, data validation) as hand-written code.
+- **No AI model runs inside the app.** "AI Suggest" is a classical optimisation algorithm (simulated annealing),
+  and pick frequency is a count, so there are no model weights, API keys or external services.
+- **Dependencies:** listed in `package.json` (npm) and `requirements.txt` (Python), all open source.
+- **Credentials:** none are needed to run the app. CI deploys with `VERCEL_TOKEN`, `VERCEL_ORG_ID` and
+  `VERCEL_PROJECT_ID` stored as GitHub Actions secrets; see [.env.example](.env.example). Nothing secret is committed.
+
+## Development log
+
+Key decisions, experiments, rejected approaches and AI assistance are recorded in [DEV_LOG.md](DEV_LOG.md).
 
 ## Dataset
 
