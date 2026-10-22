@@ -3,9 +3,9 @@ import { useApp } from './core/appStore';
 import { BUSINESS } from './core/categories';
 
 const MODULES = [
-  { n: 1, id: 'data', title: 'Order data', body: 'See what we made from one month of real orders: the top 100 products, how often each is picked, and every order.' },
-  { n: 2, id: 'twin', title: 'Warehouse replay', body: 'Watch Pip walk the aisles of a 3D warehouse to fetch each order, with live distance and time.' },
-  { n: 3, id: 'game', title: 'Slotting game', body: 'Swap products between shelves, replay the same orders, and beat the fast-movers-first layout.' },
+  { n: 1, id: 'data', title: 'Order data', body: 'One month of real orders, prepared for simulation: the top 100 products, pick counts, cost classes and handling levels.' },
+  { n: 2, id: 'twin', title: 'Warehouse replay', body: 'Watch a picker walk the aisles of the 3D warehouse to fill each order, with live distance and time.' },
+  { n: 3, id: 'game', title: 'Slotting challenge', body: 'Re-slot products, replay the same orders, and beat the fast-movers-first baseline on time.' },
 ] as const;
 
 export function Home() {
@@ -13,9 +13,9 @@ export function Home() {
   return (
     <div className="home">
       <header className="home-head">
-        <h1 className="stamp small">Pick &amp; Pack</h1>
-        <p><b>{BUSINESS.name}</b> · {BUSINESS.tagline}</p>
-        <p className="home-sub">A digital twin of the picking floor, built on the shop's real orders.</p>
+        <p className="home-kicker">{BUSINESS.name} · {BUSINESS.tagline}</p>
+        <h1 className="wordmark">Pick &amp; Pack</h1>
+        <p className="home-sub">A digital twin of the picking floor. Replay real orders, re-slot the shelves, measure the difference.</p>
       </header>
       <ol className="modules">
         {MODULES.map(m => (

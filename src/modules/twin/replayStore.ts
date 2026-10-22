@@ -1,4 +1,4 @@
-// Twin module: replay state for Pip (play/pause, speed, live counters, rack visits for the heatmap).
+// Twin module: replay state for the picker (play/pause, speed, live counters, rack visits for the heatmap).
 // Reused by the game module so the player can replay the same orders on their layout.
 import { create } from 'zustand';
 
@@ -14,6 +14,7 @@ export type Live = {
 type ReplayState = {
   playing: boolean; speed: number; replayId: number; live: Live | null;
   colourBy: ColourBy; visits: number[];
+  focus: number | null;                    // aisle the camera zooms to, null = whole floor
   togglePlay: () => void;
   restart: () => void;
   reset: () => void;
@@ -21,21 +22,23 @@ type ReplayState = {
   setLive: (l: Live | null) => void;
   visit: (slot: number) => void;
   setColourBy: (c: ColourBy) => void;
+  setFocus: (aisle: number | null) => void;
 };
 
 const blank = () => Array<number>(100).fill(0);
 
 export const useReplay = create<ReplayState>((set, get) => ({
-  playing: false, speed: 10, replayId: 0, live: null, colourBy: 'category', visits: blank(),
+  playing: false, speed: 10, replayId: 0, live: null, colourBy: 'category', visits: blank(), focus: null,
   togglePlay: () => {
     const { playing, live } = get();
     if (!playing && live?.done) get().restart();
     else set({ playing: !playing });
   },
   restart: () => set({ replayId: get().replayId + 1, live: null, visits: blank(), playing: true }),
-  reset: () => set({ replayId: get().replayId + 1, live: null, visits: blank(), playing: false }),
+  reset: () => set({ replayId: get().replayId + 1, live: null, visits: blank(), playing: false, focus: null }),
   setSpeed: speed => set({ speed }),
   setLive: live => set({ live }),
   visit: slot => { const visits = [...get().visits]; visits[slot]++; set({ visits }); },
   setColourBy: colourBy => set({ colourBy }),
+  setFocus: focus => set({ focus }),
 }));

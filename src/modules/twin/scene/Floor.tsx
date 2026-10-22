@@ -4,7 +4,7 @@ import { CanvasTexture, SRGBColorSpace } from 'three';
 import { AISLES, L, PITCH, pts, DOCK } from '../../../core/engine/geometry';
 import { CENTER, to3 } from './coords';
 
-const LINE = '#ffc93c';
+const LINE = '#f2b705';
 
 function Stripe({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
   return (
@@ -22,14 +22,14 @@ export function Floor() {
     <group>
       <mesh position={[CENTER[0], 0, CENTER[2]]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width + 12, L + 10]} />
-        <meshStandardMaterial color="#dfe6ee" />
+        <meshStandardMaterial color="#b9bfc7" roughness={0.95} />
       </mesh>
       {[...Array(AISLES).keys()].map(a => <Stripe key={a} x={a * PITCH} y={L / 2} w={0.14} h={L} />)}
       <Stripe x={width / 2} y={0} w={width + 0.14} h={0.14} />
       <Stripe x={width / 2} y={L} w={width + 0.14} h={0.14} />
       <mesh position={to3(dock.x, dock.y - 1.6, 0.4)}>
         <boxGeometry args={[3.2, 0.8, 1.6]} />
-        <meshStandardMaterial color="#3d7be0" />
+        <meshStandardMaterial color="#2b3446" />
       </mesh>
       <Label text="PACKING" position={to3(dock.x, dock.y - 1.6, 0.81)} />
     </group>

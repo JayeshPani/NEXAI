@@ -12,11 +12,11 @@ export function BeforeAfter() {
   return (
     <div className="before-after" aria-label="Before and after, per order">
       <div>
-        <span className="ba-label">Before ({mode === 'challenge' ? 'starting shelves' : 'jumbled shelves'})</span>
+        <span className="ba-label">Before ({mode === 'challenge' ? 'baseline' : 'as received'})</span>
         <span className="ba-val">{m1(before.meanDist)} · {secs(before.avgTime)}</span>
       </div>
       <div>
-        <span className="ba-label">After (your shelves)</span>
+        <span className="ba-label">After (your layout)</span>
         <span className="ba-val">{m1(yours.meanDist)} · {secs(yours.avgTime)}</span>
       </div>
       <div className={tone(dDist)}>

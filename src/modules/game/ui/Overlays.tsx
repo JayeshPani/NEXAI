@@ -15,14 +15,14 @@ export function SwapTooltip({ x, y }: { x: number; y: number }) {
   const pts = preview === null ? null : pointsFor(-preview);
   return (
     <ShelfTooltip slot={hovered} product={at[hovered]} x={x} y={y}>
-      {twin && <div className="tt-hint">Same spot for Pip, no change</div>}
+      {twin && <div className="tt-hint">Same pick point, no change</div>}
       {pts !== null && !outOfSwaps && (
         <div className={`tt-points ${pts > 0 ? 'good' : pts < 0 ? 'bad' : ''}`}>
-          Swap here: {pts > 0 ? '+' : ''}{pts.toLocaleString()} points ({pts > 0 ? 'saves' : 'costs'} {Math.abs(pts).toLocaleString()} s)
+          Swap: {pts > 0 ? '+' : ''}{pts.toLocaleString()} pts ({pts > 0 ? 'saves' : 'costs'} {Math.abs(pts).toLocaleString()} s)
         </div>
       )}
-      {selected === null && <div className="tt-hint">Click to pick up this shelf</div>}
-      {selected === hovered && <div className="tt-hint">Click again to put it back</div>}
+      {selected === null && <div className="tt-hint">Click to select</div>}
+      {selected === hovered && <div className="tt-hint">Click again to deselect</div>}
     </ShelfTooltip>
   );
 }
@@ -53,7 +53,7 @@ export function EndScreen() {
   const points = pointsFor(saved);
   const stars = starsFor(saved);
   const canSave = qualifies(points) && !savedScore;
-  const title = ['Slower than before, try again!', 'Nice work!', 'Great shelving!', 'Superstar shelver!'][stars];
+  const title = ['No improvement', 'Bronze rating', 'Silver rating', 'Gold rating'][stars];
   const again = () => { setSavedScore(false); setName(''); reset(); };
   return (
     <div className="modal-backdrop">
@@ -63,23 +63,23 @@ export function EndScreen() {
         <p className="end-points"><b>{points.toLocaleString()}</b> points</p>
         <p className="end-copy">
           {saved > 0
-            ? `With ${swapsUsed} swaps, the team saves ${duration(saved)} of picking over the last week of November.`
-            : 'Tip: put products bought together side by side near the packing desk, and forklift items at the aisle ends.'}
+            ? `${swapsUsed} swaps save ${duration(saved)} of picking across the test week (22–30 Nov).`
+            : 'Try placing products ordered together side by side near the dock, and forklift items at the aisle ends.'}
         </p>
-        {stars < 3 && <p className="next-star">Next star at {[1, 1500, 4000][stars].toLocaleString()} points</p>}
+        {stars < 3 && <p className="next-star">{['Bronze', 'Silver', 'Gold'][stars]} at {[1, 1500, 4000][stars].toLocaleString()} points</p>}
         {canSave && (
           <form className="save" onSubmit={e => { e.preventDefault(); addScore({ name: name.trim() || 'Player', points, stars, at: new Date().toISOString() }); setSavedScore(true); }}>
-            <label htmlFor="nick">Add your name to the high scores</label>
+            <label htmlFor="nick">Save to the leaderboard</label>
             <div>
-              <input id="nick" maxLength={14} value={name} onChange={e => setName(e.target.value)} placeholder="Your name" autoComplete="off" />
+              <input id="nick" maxLength={14} value={name} onChange={e => setName(e.target.value)} placeholder="Name" autoComplete="off" />
               <button className="primary" type="submit">Save</button>
             </div>
           </form>
         )}
-        {savedScore && <p className="saved-msg">Saved! <button className="link" onClick={() => { openMenu(); setPanel('scores'); }}>See high scores</button></p>}
+        {savedScore && <p className="saved-msg">Saved. <button className="link" onClick={() => { openMenu(); setPanel('scores'); }}>View leaderboard</button></p>}
         <div className="modal-actions">
           <button className="primary" onClick={again}>Play again</button>
-          <button onClick={openMenu}>Menu</button>
+          <button onClick={openMenu}>Challenge menu</button>
         </div>
       </div>
     </div>

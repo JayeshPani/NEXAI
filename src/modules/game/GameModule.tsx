@@ -55,7 +55,7 @@ export function GameModule() {
         {playing && (<>
           <Ticker hideIdle />
           <BeforeAfter />
-          <ColourLegend extra={<span><i className="sw partner" /> bought together</span>} />
+          <ColourLegend extra={<span><i className="sw partner" /> ordered together</span>} />
           <Tip />
           <SwapFeedback />
           <Toast />
@@ -72,12 +72,12 @@ export function GameModule() {
   );
 }
 
-// One gentle hint at a time, based on what the player is doing
+// One contextual hint at a time
 function Tip() {
   const { selected, swapsUsed, mode, ai } = useGame();
-  let text = 'Click a shelf to pick it up.';
-  if (selected !== null) text = 'Purple lines show what people buy with it. Point at a shelf to see the points, then click to swap.';
-  else if (mode === 'challenge' && swapsUsed > 0 && swapsUsed < 10) text = `${10 - swapsUsed} swaps left. Near the packing desk is quickest; forklift items (FL4+) like aisle ends.`;
-  else if (mode === 'sandbox' && ai.status === 'idle') text = 'Free play: swap as much as you like, or ask the robot for ideas.';
-  return <div className="tip"><span className="pip-face" aria-hidden="true" />{text}</div>;
+  let text = 'Select a shelf to start a swap.';
+  if (selected !== null) text = 'Dashed lines link products ordered together. Hover a shelf to preview, click to swap.';
+  else if (mode === 'challenge' && swapsUsed > 0 && swapsUsed < 10) text = `${10 - swapsUsed} swaps left. Fast movers belong near the dock; forklift items (FL4+) at the aisle ends.`;
+  else if (mode === 'sandbox' && ai.status === 'idle') text = 'Sandbox: unlimited swaps. Run AI Suggest to compare.';
+  return <div className="tip">{text}</div>;
 }

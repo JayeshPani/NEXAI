@@ -1,7 +1,8 @@
-// The current order as Pip sees it: items in the order Pip visits them, ticked off as they are picked
+// The current order as a pick list: items in visiting order, ticked off as they are picked
 import { useMemo } from 'react';
+import { productImage } from '../../../core/productImages';
+import { CategoryIcon } from '../../../core/ui/CategoryIcon';
 import { useData } from '../../../core/appStore';
-import { CATEGORY } from '../../../core/categories';
 import { routeOrder, slotsOf } from '../../../core/engine/sim';
 import { useReplay } from '../replayStore';
 
@@ -24,7 +25,8 @@ export function PickList({ assign }: { assign: number[] }) {
         {visits.map((v, i) => (
           <li key={v.slot} className={i < done ? 'picked' : i === done && live && !live.done ? 'next' : ''}>
             <span className="check" aria-hidden="true">{i < done ? '✓' : ''}</span>
-            <span className="pname">{CATEGORY[data.products[v.p].category].icon} {data.products[v.p].name}
+            <img className="thumb" src={productImage(data.products[v.p])} alt="" />
+            <span className="pname"><CategoryIcon category={data.products[v.p].category} /> {data.products[v.p].name}
               <small> ×{v.q} · <b className={`abc-${data.products[v.p].abc}`}>{data.products[v.p].abc}</b> · FL{data.products[v.p].fl}</small></span>
             <span className="qty">{Math.round(v.secs)} s</span>
           </li>

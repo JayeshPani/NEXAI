@@ -92,25 +92,23 @@ export function Picker({ orders, getAssign, pick }: { orders: Order[]; getAssign
 
   return (
     <group ref={group}>
-      {/* Pip: green vest, round head, yellow hard hat, eyes facing the camera */}
+      {/* Picker: dark workwear, hi-vis vest, hard hat */}
       <mesh position={[0, 0.75, 0]}>
-        <capsuleGeometry args={[0.3, 0.9, 4, 12]} />
-        <meshStandardMaterial color="#33a867" />
+        <capsuleGeometry args={[0.28, 0.9, 4, 12]} />
+        <meshStandardMaterial color="#2b3446" />
       </mesh>
-      <mesh position={[0, 1.68, 0]}>
-        <sphereGeometry args={[0.3, 20, 16]} />
-        <meshStandardMaterial color="#f6c99b" />
+      <mesh position={[0, 0.95, 0]}>
+        <cylinderGeometry args={[0.3, 0.3, 0.5, 16]} />
+        <meshStandardMaterial color="#e8ff3a" emissive="#9aa800" emissiveIntensity={0.25} />
       </mesh>
-      <mesh position={[0, 1.86, 0]}>
-        <sphereGeometry args={[0.33, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#ffc93c" />
+      <mesh position={[0, 1.66, 0]}>
+        <sphereGeometry args={[0.24, 20, 16]} />
+        <meshStandardMaterial color="#c99a7a" />
       </mesh>
-      {[-0.11, 0.11].map(x => (
-        <mesh key={x} position={[x, 1.72, 0.27]}>
-          <sphereGeometry args={[0.05, 10, 8]} />
-          <meshBasicMaterial color="#22395b" />
-        </mesh>
-      ))}
+      <mesh position={[0, 1.78, 0]}>
+        <sphereGeometry args={[0.27, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#f2b705" />
+      </mesh>
     </group>
   );
 }

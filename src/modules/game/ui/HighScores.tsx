@@ -7,7 +7,7 @@ export function HighScores({ onBack }: { onBack: () => void }) {
     <div className="box-body">
       <h2>High scores</h2>
       {scores.length === 0
-        ? <p className="empty">No scores yet. Play the puzzle and yours will be the first!</p>
+        ? <p className="empty">No scores yet. Finish a challenge to set the first one.</p>
         : (
           <ol className="scores">
             {scores.map((s, i) => (

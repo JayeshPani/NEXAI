@@ -99,7 +99,7 @@ export const useGame = create<State>((set, get) => {
       if (selected === null) return set({ selected: s, preview: null });
       if (s === selected) return set({ selected: null, preview: null });
       if (samePickPoint(selected, s)) {
-        get().showToast('Same spot for Pip, no change. That swap was free.');
+        get().showToast('Same pick point: no change, no swap used.');
         return set({ selected: null, preview: null });
       }
       if (mode === 'challenge' && swapsUsed >= MAX_SWAPS) return;

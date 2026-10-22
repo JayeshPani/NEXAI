@@ -1,6 +1,8 @@
 // Module 1 — Order data (MVP 1): what the pre-processing step produced from one month of order lines.
 // Read-only view of products.json, orders.json and affinity.json.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { productImage, productType } from '../../core/productImages';
+import { CategoryIcon } from '../../core/ui/CategoryIcon';
 import { useData } from '../../core/appStore';
 import { ABC_COLOUR, BUSINESS, CATEGORY, FL_LABEL, flColour } from '../../core/categories';
 import { RULES, handlingTime } from '../../core/engine/rules';
@@ -52,6 +54,7 @@ export function DataModule() {
             <li>Files: <code>products.json</code>, <code>orders.json</code> (train / test), <code>affinity.json</code> (top 500 pairs), made by <code>preprocess.py</code>.</li>
           </ul>
         </details>
+        <Credits />
       </main>
     </div>
   );
@@ -72,7 +75,7 @@ function Products() {
         {shown.map(p => (
           <li key={p.id}>
             <span className="rank">{p.id + 1}</span>
-            <span className="pname">{CATEGORY[p.category].icon} {p.name} <small>{p.code} · £{p.price.toFixed(2)}</small></span>
+            <span className="pname"><img className="thumb" src={productImage(p)} alt="" loading="lazy" /><CategoryIcon category={p.category} /> {p.name} <small>{p.code} · £{p.price.toFixed(2)}</small></span>
             <span className="badges"><b className={`abc-${p.abc}`}>{p.abc}</b><b className="fl-badge" style={{ background: flColour(p.fl), color: p.fl >= 4 ? '#fff' : undefined }}>FL{p.fl}</b></span>
             <span className="bar"><i style={{ width: `${(p.picksTrain / maxPicks) * 100}%` }} /></span>
             <span className="num">{p.picksTrain}</span>
@@ -152,7 +155,7 @@ function Rules() {
       <div className="panel-card">
         <h3>Categories</h3>
         <ul className="chips">
-          {cats.map(({ c, n }) => <li key={c} style={{ borderColor: CATEGORY[c].colour }}><span>{CATEGORY[c].icon}</span> {c} <b>{n}</b></li>)}
+          {cats.map(({ c, n }) => <li key={c} style={{ borderColor: CATEGORY[c].colour }}><CategoryIcon category={c} /> {c} <b>{n}</b></li>)}
         </ul>
       </div>
       <div className="panel-card">
@@ -187,5 +190,33 @@ function Rules() {
         <p className="note">Walking and forklift access depend on where a product sits, so they are what slotting can improve.</p>
       </div>
     </section>
+  );
+}
+
+type Credit = { title: string; author: string; license: string; source: string };
+
+// Photo credits, as the CC licences require (one photo per product type, from Wikimedia Commons)
+function Credits() {
+  const { products } = useData();
+  const [credits, setCredits] = useState<Record<string, Credit> | null>(null);
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}products/credits.json`).then(r => r.json()).then(setCredits).catch(() => setCredits({}));
+  }, []);
+  const used = useMemo(() => [...new Set(products.map(productType))].sort(), [products]);
+  return (
+    <details className="rules">
+      <summary>Photo credits</summary>
+      <p className="note">Product photos show the type of item, not the exact product. All from Wikimedia Commons under the licences listed.</p>
+      <ol className="credits">
+        {used.map(t => {
+          const c = credits?.[t];
+          return (
+            <li key={t}>
+              <b>{t.replace(/-/g, ' ')}</b>: {c ? <><a href={c.source} target="_blank" rel="noreferrer">{c.title}</a> by {c.author || 'unknown'}, {c.license}</> : '…'}
+            </li>
+          );
+        })}
+      </ol>
+    </details>
   );
 }

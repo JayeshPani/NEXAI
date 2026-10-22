@@ -1,4 +1,4 @@
-# Pick & Pack Puzzle — Warehouse Digital Twin
+# Pick & Pack — Warehouse Digital Twin
 
 NEXAI 2026 Hackathon · Track 4 · PS 4.2
 
@@ -17,7 +17,7 @@ The app opens on a home screen with three separate modules, one per must-have re
 |---|---|---|---|
 | 1 | **Order data** | Pre-processing: one month of order lines turned into JSON (top 100 products, pick counts, orders) | `preprocess.py`, `src/modules/data` |
 | 2 | **Warehouse replay** | 3D grid warehouse (racks, aisles, packing dock, animated picker) replaying orders with live distance and time | `src/modules/twin` |
-| 3 | **Slotting game** | Swap products between slots, replay the same orders, compare walking distance and pick time against the automatic baseline | `src/modules/game` |
+| 3 | **Slotting challenge** | Swap products between slots, replay the same orders, compare walking distance and pick time against the automatic baseline | `src/modules/game` |
 
 `src/core` holds what all three share: the simulator (`engine/`: geometry, routing, scoring, layouts) and data
 loading. The replay module is read-only: no swapping, scoring or optimiser. Everything game-related lives in
@@ -26,25 +26,32 @@ imports one it shouldn't (core imports no module; data and replay never import t
 
 ## How to play (module 3)
 
-The game opens on its own menu: **Play the puzzle**, **Free play**, **How to play** and **High scores**.
+The challenge opens on its own menu: **Challenge**, **Sandbox**, **How to play** and **High scores**.
 
-- **Play the puzzle (Challenge mode):** start from the Starting shelves (the plan's Baseline) with **10 swaps**.
-  Click a shelf to pick it up, point at another to see the points the swap would earn, click to swap.
-  Purple dashed lines point to the products most often bought together with the selected one.
+- **Challenge:** start from the Baseline (fast movers nearest the dock) with **10 swaps**. Click a shelf or its
+  product card to select it, hover another to preview the time the swap saves or costs, click to swap. Dashed lines
+  link the products most often ordered with the selected one.
 - **Scoring:** 1 point per second of picking time saved over all test-week orders (walking + forklift access).
-  Stars: 1 for any saving, 2 at 1,500 points, 3 at 4,000 points. A greedy 10-swap search reaches about 6,480,
-  which set these thresholds. Each swap shows a pop-up ("+320 Great swap!" / "−40 Oops, slower").
-  Finish early with **I'm done**.
-- **High scores:** the top 8 puzzle scores, saved in this browser only (localStorage).
-- **Free play (Sandbox mode):** start from the Jumbled shelves (the plan's Original) with unlimited swaps.
-- **Ask the robot (AI Suggest):** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and
-  scored on the test week.
-- **Watch Pip pick** replays 25 sample orders from the test week (Walk 1×, Run 10×, Zoom 50×).
-- **Colour by** Category, Class, FL, Picks or Busy (visits during the replay). Every shelf top carries a label:
-  category icon, short product name, class badge and FL badge.
-- **Grown-up stats** shows the plan's full scoreboard (total, mean, median, p90, average time).
-- Esc puts a shelf back. Swapping the two shelves facing each other across an aisle changes nothing
-  (same pick point) and costs no swap.
+  Rating: Bronze for any saving, Silver at 1,500, Gold at 4,000. A greedy 10-swap search reaches about 6,480,
+  which set these thresholds. **Finish** ends early.
+- **Leaderboard:** the top 8 challenge scores, saved in this browser only (localStorage).
+- **Sandbox:** start from the as-received layout (Original) with unlimited swaps.
+- **Run AI Suggest:** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and scored on the
+  test week.
+- **Replay** walks 25 sample orders from the test week at 1×, 10× or 50×.
+- **Colour by** Category, Class, FL, Picks or Busy (visits during the replay). **All aisles / 1–5** moves the camera
+  to the whole floor or one aisle.
+- **Detailed stats** shows the plan's full scoreboard (time and walking: mean, median, p90).
+- Esc deselects. Shelves facing each other across an aisle share a pick point, so swapping them changes nothing and
+  costs no swap.
+
+## Product photos
+
+Every rack carries a card with a product photo, name, category colour, cost class and FL. The dataset has no
+images, so each product is matched by name to one of 41 product types (jumbo bag, hot water bottle, T-light holder,
+…; rules in `src/core/productImages.ts`), and each type uses one openly licensed photo from Wikimedia Commons
+(CC0, CC BY or CC BY-SA). Photos show the type of item, not the exact product. Titles, authors, licences and links
+are in `public/products/credits.json` and under **Photo credits** in module 1.
 
 ## Data rules
 
