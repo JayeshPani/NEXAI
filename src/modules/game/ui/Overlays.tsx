@@ -1,24 +1,25 @@
-// Tooltip with swap preview, swap pop-up, toast and the puzzle's end screen
+// Tooltip with swap preview, swap pop-up, toast and the Challenge result screen
 import { useState } from 'react';
-import { addScore, qualifies } from '../leaderboard';
-import { duration, pointsFor, starsFor, swapVerdict } from '../scoring';
 import { samePickPoint } from '../../../core/engine/layouts';
 import { ShelfTooltip } from '../../twin/TwinModule';
-import { useGame, useSaved } from '../gameStore';
+import { qualifies } from '../leaderboard';
+import { duration, pointsFor, starsFor, swapVerdict } from '../scoring';
+import { MAX_SWAPS, useGame, useSaved } from '../gameStore';
 import { Stars } from './Stars';
 
 export function SwapTooltip({ x, y }: { x: number; y: number }) {
-  const { hovered, selected, preview, data, at, mode, swapsUsed, ended } = useGame();
-  if (hovered === null || !data || ended) return null;
+  const { hovered, selected, preview, blocked, at, mode, history, submitted } = useGame();
+  if (hovered === null || submitted) return null;
   const twin = selected !== null && hovered !== selected && samePickPoint(selected, hovered);
-  const outOfSwaps = mode === 'challenge' && swapsUsed >= 10;
+  const outOfSwaps = mode === 'challenge' && history.length >= MAX_SWAPS;
   const pts = preview === null ? null : pointsFor(-preview);
   return (
     <ShelfTooltip slot={hovered} product={at[hovered]} x={x} y={y}>
       {twin && <div className="tt-hint">Same pick point, no change</div>}
+      {blocked && <div className="tt-points bad">{blocked}</div>}
       {pts !== null && !outOfSwaps && (
         <div className={`tt-points ${pts > 0 ? 'good' : pts < 0 ? 'bad' : ''}`}>
-          Swap: {pts > 0 ? '+' : ''}{pts.toLocaleString()} pts ({pts > 0 ? 'saves' : 'costs'} {Math.abs(pts).toLocaleString()} s)
+          Swap: {pts > 0 ? 'saves' : pts < 0 ? 'costs' : 'changes'} {Math.abs(pts).toLocaleString()} s on 1–21 Nov
         </div>
       )}
       {selected === null && <div className="tt-hint">Click to select</div>}
@@ -31,10 +32,10 @@ export function SwapFeedback() {
   const feedback = useGame(s => s.feedback);
   if (!feedback) return null;
   const v = swapVerdict(feedback.delta);
-  const pts = pointsFor(-feedback.delta);
+  const s = pointsFor(-feedback.delta);
   return (
     <div className={`pop ${v.tone}`} key={feedback.id} role="status">
-      <b>{pts > 0 ? '+' : ''}{pts.toLocaleString()}</b> {v.text}
+      <b>{s > 0 ? '+' : ''}{s.toLocaleString()} s</b> {v.text}
     </div>
   );
 }
@@ -45,30 +46,29 @@ export function Toast() {
 }
 
 export function EndScreen() {
-  const { ended, mode, reset, openMenu, setPanel, swapsUsed } = useGame();
-  const saved = useSaved();
+  const { submitted, mode, reset, openMenu, setPanel, history, saveScore, savedScore, ai, ref, yours } = useGame();
+  const { score } = useSaved();
   const [name, setName] = useState('');
-  const [savedScore, setSavedScore] = useState(false);
-  if (!ended || mode !== 'challenge') return null;
-  const points = pointsFor(saved);
-  const stars = starsFor(saved);
-  const canSave = qualifies(points) && !savedScore;
+  if (!submitted || mode !== 'challenge' || !ref || !yours) return null;
+  const points = pointsFor(score);
+  const stars = starsFor(score);
+  const aiSaved = ai.result ? ref.test.baseline.totalTime - ai.result.test.totalTime : null;
   const title = ['No improvement', 'Bronze rating', 'Silver rating', 'Gold rating'][stars];
-  const again = () => { setSavedScore(false); setName(''); reset(); };
   return (
     <div className="modal-backdrop">
       <div className="modal" role="dialog" aria-labelledby="end-title">
         <Stars n={stars} animate />
         <h2 id="end-title">{title}</h2>
-        <p className="end-points"><b>{points.toLocaleString()}</b> points</p>
+        <p className="end-points"><b>{points.toLocaleString()}</b> pts</p>
         <p className="end-copy">
-          {saved > 0
-            ? `${swapsUsed} swaps save ${duration(saved)} of picking across the test week (22–30 Nov).`
-            : 'Try placing products ordered together side by side near the dock, and forklift items at the aisle ends.'}
+          {score > 0
+            ? `${history.length} swaps save ${duration(score)} of picking on 22–30 Nov, a week your layout was never tuned on.`
+            : 'Slower than the baseline on the unseen week. Try pairing products ordered together near the dock, and forklift items at aisle ends.'}
+          {aiSaved !== null && ` AI Suggest saves ${duration(aiSaved)} with ${ai.result!.moves.length} moves.`}
         </p>
         {stars < 3 && <p className="next-star">{['Bronze', 'Silver', 'Gold'][stars]} at {[1, 1500, 4000][stars].toLocaleString()} points</p>}
-        {canSave && (
-          <form className="save" onSubmit={e => { e.preventDefault(); addScore({ name: name.trim() || 'Player', points, stars, at: new Date().toISOString() }); setSavedScore(true); }}>
+        {qualifies(points) && !savedScore && (
+          <form className="save" onSubmit={e => { e.preventDefault(); saveScore(name); }}>
             <label htmlFor="nick">Save to the leaderboard</label>
             <div>
               <input id="nick" maxLength={14} value={name} onChange={e => setName(e.target.value)} placeholder="Name" autoComplete="off" />
@@ -78,7 +78,7 @@ export function EndScreen() {
         )}
         {savedScore && <p className="saved-msg">Saved. <button className="link" onClick={() => { openMenu(); setPanel('scores'); }}>View leaderboard</button></p>}
         <div className="modal-actions">
-          <button className="primary" onClick={again}>Play again</button>
+          <button className="primary" onClick={() => { setName(''); reset(); }}>Play again</button>
           <button onClick={openMenu}>Challenge menu</button>
         </div>
       </div>

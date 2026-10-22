@@ -1,5 +1,5 @@
 // Warehouse time rules for Holly & Ivy Gifts. Shown in the UI; every module scores with these.
-import { L, pts } from './geometry';
+import { D, DOCK, L, pts } from './geometry';
 import type { Product } from './types';
 
 export const RULES = {
@@ -29,3 +29,29 @@ export const pickTime = (p: Product, slot: number) => handlingTime(p) + accessTi
 /** pick[productId][slotId] = seconds to pick one line of that product from that slot. */
 export const pickTable = (products: Product[]): number[][] =>
   products.map(p => Array.from({ length: 100 }, (_, s) => pickTime(p, s)));
+
+// ---- Optional placement rule: ABC zones (Challenge setting; ported from Megha Gautam's branch) ----
+// Velocity class: A = top 20 products by train-week picks, B = next 30, C = last 50 (products.json is in
+// pick-rank order). Zone A = the 20 slots nearest the dock, B = the next 30, C = the rest.
+export type Zone = 'A' | 'B' | 'C';
+export const velocityOf = (p: Product): Zone => (p.id < 20 ? 'A' : p.id < 50 ? 'B' : 'C');
+export const zoneOf: Zone[] = (() => {
+  const bySlot = [...Array(100).keys()].sort((a, b) => D[DOCK][a] - D[DOCK][b] || a - b);
+  const z: Zone[] = [];
+  bySlot.forEach((slot, i) => (z[slot] = i < 20 ? 'A' : i < 50 ? 'B' : 'C'));
+  return z;
+})();
+
+export type RuleOptions = { abcZones: boolean };
+export const NO_RULES: RuleOptions = { abcZones: false };
+
+/** Why product p may not go into slot, or null if it may */
+export function placementProblem(p: Product, slot: number, opts: RuleOptions): string | null {
+  if (opts.abcZones && zoneOf[slot] !== velocityOf(p))
+    return `ABC zones on: ${velocityOf(p)} movers stay in zone ${velocityOf(p)}`;
+  return null;
+}
+
+/** Why swapping the products in slots a and b is not allowed, or null */
+export const swapProblem = (products: Product[], productAt: readonly number[], a: number, b: number, opts: RuleOptions) =>
+  placementProblem(products[productAt[a]], b, opts) ?? placementProblem(products[productAt[b]], a, opts);

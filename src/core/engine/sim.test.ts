@@ -47,17 +47,19 @@ describe('scoring (Section 5.4)', () => {
       const p1 = rnd(), p2 = rnd();
       if (p1 === p2) continue;
       const s = eng.swapDelta(p1, p2);
-      if (k % 3 === 0) s.undo(); else { s.commit(); total += s.delta; dist += s.dDist; }
+      if (k % 3 !== 0) { s.commit(); total += s.delta; dist += s.dDist; }   // every third preview is dropped
     }
     expect(eng.stats().totalTime).toBeCloseTo(total, 6);
     expect(scoreLayout(orders.train, eng.assign, pick).totalTime).toBeCloseTo(total, 6);
     expect(scoreLayout(orders.train, eng.assign, pick).totalDist).toBeCloseTo(dist, 6);
   });
-  it('undo restores the layout exactly', () => {
+  it('a swap preview leaves the layout and the scores untouched until committed', () => {
     const eng = makeEngine(orders.train, [...baseline], pick);
-    const before = [...eng.assign];
-    eng.swapDelta(0, 50).undo();
+    const before = [...eng.assign], stats = eng.stats();
+    eng.swapDelta(0, 50);
     expect(eng.assign).toEqual(before);
+    expect(eng.stats()).toEqual(stats);
+    expect(eng.productAt[eng.assign[0]]).toBe(0);
   });
   it('swapping the left/right slots of one bay changes nothing (Section 7.3)', () => {
     const eng = makeEngine(orders.test, [...baseline], pick);
@@ -66,6 +68,5 @@ describe('scoring (Section 5.4)', () => {
     const s = eng.swapDelta(p1, p2);
     expect(s.delta).toBeCloseTo(0, 9);
     expect(s.dDist).toBeCloseTo(0, 9);
-    s.undo();
   });
 });

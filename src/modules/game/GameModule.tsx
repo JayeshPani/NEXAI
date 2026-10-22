@@ -9,6 +9,7 @@ import { ColourLegend } from '../twin/ui/ColourBy';
 import { Ticker } from '../twin/ui/Ticker';
 import { useGame } from './gameStore';
 import { BeforeAfter } from './ui/BeforeAfter';
+import { AiPanel } from './ui/AiPanel';
 import { Controls } from './ui/Controls';
 import { GameHeader } from './ui/Hud';
 import { Menu } from './ui/Menu';
@@ -24,7 +25,10 @@ export function GameModule() {
   const init = useGame(s => s.init);
   useEffect(() => { init(data); }, [data, init]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') useGame.getState().deselect(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') useGame.getState().deselect();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); useGame.getState().undo(); }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
@@ -32,15 +36,16 @@ export function GameModule() {
   const partnerSlots = useMemo(() => g.selected === null ? undefined
     : new Set(data.topPartners[g.at[g.selected]].map(p => g.assign[p])), [g.selected, g.at, g.assign, data]);
 
-  if (!g.engine) return null;
+  if (!g.yours) return null;
   const playing = g.view === 'play';
 
   return (
     <div className="app game">
       <GameHeader />
+      <div className={`game-body${playing && g.side ? ' with-side' : ''}`}>
       <div className="stage">
         <WarehouseScene
-          orders={data.sample} getAssign={() => useGame.getState().engine!.assign}
+          orders={data.sample} getAssign={() => useGame.getState().assign}
           racks={{
             at: g.at, colourBy, visits, selected: g.selected, hovered: g.hovered, partnerSlots,
             onSlotClick: playing ? g.clickSlot : undefined,
@@ -63,6 +68,8 @@ export function GameModule() {
         </>)}
         {g.view === 'menu' && <Menu />}
       </div>
+      {playing && g.side === 'ai' && <AiPanel />}
+      </div>
       {playing && (<>
         <Controls />
         <Scoreboard />
@@ -74,10 +81,10 @@ export function GameModule() {
 
 // One contextual hint at a time
 function Tip() {
-  const { selected, swapsUsed, mode, ai } = useGame();
+  const { selected, history, mode, ai } = useGame();
   let text = 'Select a shelf to start a swap.';
   if (selected !== null) text = 'Dashed lines link products ordered together. Hover a shelf to preview, click to swap.';
-  else if (mode === 'challenge' && swapsUsed > 0 && swapsUsed < 10) text = `${10 - swapsUsed} swaps left. Fast movers belong near the dock; forklift items (FL4+) at the aisle ends.`;
-  else if (mode === 'sandbox' && ai.status === 'idle') text = 'Sandbox: unlimited swaps. Run AI Suggest to compare.';
+  else if (mode === 'challenge' && history.length > 0 && history.length < 10) text = `${10 - history.length} swaps left. Previews use 1–21 Nov; Submit reveals your score on the unseen week.`;
+  else if (mode === 'sandbox' && ai.status === 'idle') text = 'Sandbox: unlimited swaps, scores shown live. Run AI Suggest to compare.';
   return <div className="tip">{text}</div>;
 }
