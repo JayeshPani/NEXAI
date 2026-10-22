@@ -7,8 +7,15 @@ Christmas-décor wholesaler in its November rush (the company name is ours; the 
 from Online Retail II). A 3D twin of the picking floor replays those orders. You rearrange 100 products; the twin
 replays exactly the same orders and scores walking distance and pick time before vs after.
 
-**Live:** https://nexai-jayesh-panis-projects.vercel.app · **Team:** Jayesh Pani, Megha Gautam, Meet Kumar ·
-**Pitch, demo script and Q&A:** [docs/PITCH.md](docs/PITCH.md) · **Development log:** [DEV_LOG.md](DEV_LOG.md)
+| | |
+|---|---|
+| **Live app** | https://pick-and-pack-twin.vercel.app |
+| **Demo video** | https://www.youtube.com/watch?v=ivEmdlQU4yc |
+| **Repository** | https://github.com/JayeshPani/NEXAI |
+| **Pitch deck** | [docs/PickAndPack_Pitch.pptx](docs/PickAndPack_Pitch.pptx) (PowerPoint) |
+| **Pitch, demo script and Q&A** | [docs/PITCH.md](docs/PITCH.md) |
+| **Development log** | [DEV_LOG.md](DEV_LOG.md) |
+| **Team** | Jayesh Pani, Megha Gautam, Meet Kumar |
 
 The project merges two branches of the same plan: this one (modules, product photos, time rules with forklift
 handling levels, deployment) and Megha Gautam's (explained AI Suggest with a business case, hidden test-week score,
