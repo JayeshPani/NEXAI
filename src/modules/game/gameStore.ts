@@ -12,6 +12,7 @@ import { makeEngine, scoreLayout, type Engine, type Stats } from '../../core/eng
 import { useReplay } from '../twin/replayStore';
 import { DEFAULT_ASSUMPTIONS, explainMoves, pickingDays, type Assumptions, type Move } from './insights';
 import { addScore, readScores, type HighScore } from './leaderboard';
+import type { NewItemPlan } from './newItem';
 import { optimize, type OptimizeResult } from './optimizer';
 import type { WorkerMessage, WorkerRequest } from './optimizer.worker';
 import { pointsFor, starsFor } from './scoring';
@@ -55,6 +56,8 @@ type State = {
   toast: { text: string; id: number } | null;
   feedback: { delta: number; id: number } | null;   // last swap (train-week seconds), for the pop-up
   scores: HighScore[];
+  realData: GameData | null;         // the real data while a what-if (new product) copy is loaded
+  whatIf: { name: string; retired: string; slot: number } | null;
   ai: AiState;
   assumptions: Assumptions;
 
@@ -77,6 +80,8 @@ type State = {
   runAI: () => void;
   setAiPlan: (plan: AiPlan) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
+  placeNewItem: (plan: NewItemPlan, option: number) => void;
+  exitWhatIf: () => void;
   showToast: (text: string) => void;
 };
 
@@ -119,7 +124,7 @@ export const useGame = create<State>((set, get) => {
     data: null, ref: null, view: 'menu', panel: null, side: null, mode: 'challenge', abcZones: false,
     assign: [], at: [], yours: null, history: [], submitted: false, savedScore: false,
     selected: null, hovered: null, preview: null, blocked: null, toast: null, feedback: null,
-    scores: readScores(),
+    scores: readScores(), realData: null, whatIf: null,
     ai: { status: 'idle', plan: 'balanced', progress: 0, trainGain: 0, result: null },
     assumptions: DEFAULT_ASSUMPTIONS,
 
@@ -189,8 +194,8 @@ export const useGame = create<State>((set, get) => {
     },
 
     saveScore: name => {
-      const { submitted, savedScore, yours, ref, history, assign } = get();
-      if (!submitted || savedScore || !yours || !ref) return;
+      const { submitted, savedScore, yours, ref, history, assign, whatIf } = get();
+      if (!submitted || savedScore || !yours || !ref || whatIf) return;
       const saved = ref.test.baseline.totalTime - yours.test.totalTime;
       const scores = addScore({
         name: name.trim().slice(0, 14) || 'Player', points: pointsFor(saved), stars: starsFor(saved),
@@ -235,6 +240,25 @@ export const useGame = create<State>((set, get) => {
     },
     setAiPlan: plan => set(s => ({ ai: { ...s.ai, plan } })),
     setAssumptions: patch => set(s => ({ assumptions: { ...s.assumptions, ...patch } })),
+
+    // Load the what-if copy (new product in, slowest mover to reserve) in Sandbox with the chosen slot
+    placeNewItem: (plan, option) => {
+      const { data, realData } = get();
+      if (!data) return;
+      const real = realData ?? data;
+      set(s => ({
+        realData: real, mode: 'sandbox', ai: { ...s.ai, result: null, status: 'idle' },
+        whatIf: { name: plan.name, retired: real.products[plan.retire].name, slot: plan.options[option].slot },
+      }));
+      get().init(plan.world);
+      load(plan.options[option].assign, { mode: 'sandbox' });
+    },
+    exitWhatIf: () => {
+      const { realData } = get();
+      if (!realData) return;
+      set(s => ({ realData: null, whatIf: null, ai: { ...s.ai, result: null, status: 'idle' } }));
+      get().init(realData);
+    },
 
     showToast: text => {
       const id = ++toastId;

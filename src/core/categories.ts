@@ -32,3 +32,17 @@ export function shortName(p: Product) {
     .filter(w => w && !/^(set|of|pack|box|the|and|a|in|\d+)$/i.test(w));
   return words.slice(0, 2).join(' ');
 }
+
+// Same keyword rules as preprocess.py (first match wins); a test keeps the two in step
+const CATEGORY_RULES: [Category, RegExp][] = [
+  ['Cosy & warm', /HOT WATER BOTTLE|HAND WARMER/],
+  ['Lights & candles', /T-LIGHT|NIGHT LIGHT|LIGHTS|CANDLE|LANTERN/],
+  ['Bags & storage', /\bBAG\b|SHOPPER|STORAGE/],
+  ['Kitchen & baking', /CAKE|BAKING|TEA SET|JELLY|RECIPE|POPCORN|PANTRY|MUG/],
+  ['Party & paper', /PAPER CHAIN|WRAP|NAPKIN|BUNTING|RIBBON|CRACKER/],
+  ['Christmas', /CHRISTMAS|SLEIGH|JINGLE|STOCKING|TREE|STAR|ANGEL/],
+  ['Games & crafts', /GAME|CARDS|NAUGHTS|STICKS|KNITTING|DOMINOES|HARMONICA|PENCIL|SEWING|CRAFT/],
+  ['Home & garden', /HEART|WICKER|FRAME|CLOCK|DOORMAT|CHALKBOARD|ORNAMENT|OWL|KNEELING|DECORATION/],
+];
+export const categoryFor = (name: string): Category =>
+  CATEGORY_RULES.find(([, rx]) => rx.test(name.toUpperCase()))?.[0] ?? 'Gifts & gadgets';

@@ -1,5 +1,6 @@
 // Core: loaded data and which module is open. Modules never import each other's state except
 // the game, which reuses the twin's replay.
+import { createContext, useContext } from 'react';
 import { create } from 'zustand';
 import { loadData, type GameData } from './data';
 
@@ -25,5 +26,12 @@ export const useApp = create<AppState>((set, get) => ({
   go: screen => set({ screen }),
 }));
 
+/** A module can show a what-if copy of the data (e.g. a new product) to everything rendered inside it */
+export const DataOverride = createContext<GameData | null>(null);
+
 /** Use inside modules, which only render once data has loaded. */
-export const useData = () => useApp(s => s.data)!;
+export const useData = () => {
+  const override = useContext(DataOverride);
+  const data = useApp(s => s.data);
+  return (override ?? data)!;
+};

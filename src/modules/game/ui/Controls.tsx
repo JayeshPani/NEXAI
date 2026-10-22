@@ -28,6 +28,7 @@ export function Controls() {
         </label>
       )}
       <div className="group ai-group">
+        <button className={g.side === 'newItem' ? 'on' : ''} onClick={() => g.setSide(g.side === 'newItem' ? null : 'newItem')}>New product</button>
         <button className={`ai-btn${g.side === 'ai' ? ' on' : ''}`} onClick={() => g.setSide(g.side === 'ai' ? null : 'ai')}>
           AI Suggest{g.ai.status === 'running' ? ' · running' : ''}
         </button>

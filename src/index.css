@@ -354,3 +354,12 @@ button.block { width: 100%; }
 .twin-body { grid-template-columns: minmax(0, 1fr) 340px; }
 .shift-clock .bad b, .shift-clock .bad { color: var(--bad); }
 .topbar .seg button { padding: 5px 10px; }
+.newitem { display: grid; gap: 8px; }
+.newitem input, .newitem select { font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.chip { font-size: 12px; padding: 3px 8px; }
+.newitem .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.newitem-card { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; }
+.thumb.big { width: 64px; height: 64px; }
+.lookalikes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.lookalikes li { display: flex; gap: 6px; align-items: center; }
+.whatif-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 4px 12px; background: var(--ai); color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; pointer-events: none; }
