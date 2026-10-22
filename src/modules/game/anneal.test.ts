@@ -2,11 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { anneal, tuneT0 } from './anneal';
-import { baselineLayout, partnersOf } from './layouts';
-import { scoreLayout } from './sim';
-import type { Affinity, Orders, Product } from './types';
+import { baselineLayout, partnersOf } from '../../core/engine/layouts';
+import { scoreLayout } from '../../core/engine/sim';
+import type { Affinity, Orders, Product } from '../../core/engine/types';
 
-const load = <T>(f: string): T => JSON.parse(readFileSync(new URL(`../../public/data/${f}`, import.meta.url), 'utf8'));
+const load = <T>(f: string): T => JSON.parse(readFileSync(new URL(`../../../public/data/${f}`, import.meta.url), 'utf8'));
 const products = load<Product[]>('products.json');
 const orders = load<Orders>('orders.json');
 const partners = partnersOf(load<Affinity>('affinity.json'));

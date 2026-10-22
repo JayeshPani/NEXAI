@@ -1,7 +1,7 @@
 // Simulated annealing over swaps (Plan v2, Section 8), shared by the worker and the tuning test.
-import { nearestProductTo } from './layouts';
-import { makeEngine } from './sim';
-import type { Order } from './types';
+import { nearestProductTo } from '../../core/engine/layouts';
+import { makeEngine } from '../../core/engine/sim';
+import type { Order } from '../../core/engine/types';
 
 export type AnnealOptions = {
   budgetMs?: number; T0?: number; Tend?: number; random?: () => number;

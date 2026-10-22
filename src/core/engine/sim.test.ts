@@ -6,7 +6,7 @@ import { D, DOCK } from './geometry';
 import { makeEngine, routeOrder, scoreLayout } from './sim';
 import type { Orders, Product } from './types';
 
-const load = <T>(f: string): T => JSON.parse(readFileSync(new URL(`../../public/data/${f}`, import.meta.url), 'utf8'));
+const load = <T>(f: string): T => JSON.parse(readFileSync(new URL(`../../../public/data/${f}`, import.meta.url), 'utf8'));
 const products = load<Product[]>('products.json');
 const orders = load<Orders>('orders.json');
 

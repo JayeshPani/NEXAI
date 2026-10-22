@@ -1,5 +1,5 @@
-// Start menu: a shipping box with a rubber-stamp title
-import { useGame } from '../store';
+// Game menu: a shipping box with a rubber-stamp title
+import { useGame } from '../gameStore';
 import { HighScores } from './HighScores';
 import { HowToPlay } from './HowToPlay';
 
@@ -13,13 +13,12 @@ export function Menu() {
           <div className="box-body">
             <h1 className="stamp">Pick &amp; Pack<br />Puzzle</h1>
             <p className="menu-intro">
-              Pip fetches toys and gifts for real orders from a shop in November 2011.
-              Move the shelves around so Pip walks less!
+              Move the shelves around so Pip walks less. We replay the same real orders to check.
             </p>
             <div className="menu-actions">
               <button className="big primary" onClick={() => play('challenge')}>
                 Play the puzzle
-                <small>10 swaps · earn up to 3 stars</small>
+                <small>Beat the starting shelves (fast movers near the desk) in 10 swaps</small>
               </button>
               <button className="big" onClick={() => play('sandbox')}>
                 Free play
@@ -30,9 +29,7 @@ export function Menu() {
                 <button onClick={() => setPanel('scores')}>High scores</button>
               </div>
             </div>
-            <p className="menu-foot">
-              {data ? `${data.products.length} products · ${data.orders.test.length} real orders to score` : ''}
-            </p>
+            <p className="menu-foot">{data ? `Scored on ${data.orders.test.length} real orders from 22–30 Nov 2011` : ''}</p>
           </div>
         )}
         {panel === 'how' && <HowToPlay onBack={() => setPanel(null)} />}

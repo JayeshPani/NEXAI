@@ -1,4 +1,4 @@
-import { readScores } from '../game/leaderboard';
+import { readScores } from '../leaderboard';
 import { Stars } from './Stars';
 
 export function HighScores({ onBack }: { onBack: () => void }) {

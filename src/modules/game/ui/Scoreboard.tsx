@@ -1,7 +1,7 @@
 // Grown-up stats (Section 6.4): all four layouts on every test-week order
-import type { Stats } from '../engine/sim';
-import { useGame } from '../store';
-import { m, m1, pct, secs } from './format';
+import type { Stats } from '../../../core/engine/sim';
+import { useGame } from '../gameStore';
+import { m, m1, pct, secs } from '../../../core/format';
 
 function Row({ name, plan, s, ref0, tone }: { name: string; plan: string; s?: Stats | null; ref0: Stats; tone?: string }) {
   return (

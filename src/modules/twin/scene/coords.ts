@@ -1,6 +1,6 @@
 // Plan coordinates (x, y on the floor) -> three.js (x, height, -y), so x reads left to right
 // and the front cross aisle / dock sit nearest the camera.
-import { AISLES, L, PITCH, pts } from '../engine/geometry';
+import { AISLES, L, PITCH, pts } from '../../../core/engine/geometry';
 
 export const RACK_DEPTH = 1, RACK_HEIGHT = 2.2, BAY_LEN = 1.2, AISLE_HALF = 1.5;
 export const CENTER: [number, number, number] = [((AISLES - 1) * PITCH) / 2, 0, -L / 2];

@@ -1,24 +1,27 @@
-// <Canvas> with an angled perspective camera and capped OrbitControls (Section 6.1)
-import { useEffect } from 'react';
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
+// The 3D warehouse: <Canvas> with an angled perspective camera and capped OrbitControls (Section 6.1).
+// Pure view: layout, selection and replay orders come in as props, so the twin and the game can both use it.
+import { useEffect, type ReactNode } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Vector3 } from 'three';
-import { AffinityLines } from './AffinityLines';
+import type { Order } from '../../../core/engine/types';
 import { Floor } from './Floor';
 import { Picker } from './Picker';
-import { Racks } from './Racks';
+import { Racks, type RacksProps } from './Racks';
 import { CENTER } from './coords';
 
-export function Scene({ onHover }: { onHover: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void }) {
+export function WarehouseScene({ racks, orders, getAssign, children }: {
+  racks: RacksProps; orders: Order[]; getAssign: () => number[]; children?: ReactNode;
+}) {
   return (
-    <Canvas dpr={[1, 1.5]} camera={{ position: [CENTER[0], 20, 12], fov: 42 }} onPointerMissed={() => onHover(null)}>
+    <Canvas dpr={[1, 1.5]} camera={{ position: [CENTER[0], 20, 12], fov: 42 }} onPointerMissed={() => racks.onSlotHover?.(null)}>
       <color attach="background" args={['#9adbff']} />
       <hemisphereLight args={['#ffffff', '#ffe9c7', 1.3]} />
       <directionalLight position={[8, 20, 10]} intensity={1.6} />
       <Floor />
-      <Racks onHover={onHover} />
-      <AffinityLines />
-      <Picker />
+      <Racks {...racks} />
+      {children}
+      <Picker orders={orders} getAssign={getAssign} />
       <FitCamera />
       <OrbitControls
         makeDefault target={CENTER} enablePan={false}

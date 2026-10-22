@@ -8,9 +8,24 @@ orders and scores walking distance and pick time before vs after.
 
 **Live:** https://nexai-jayesh-panis-projects.vercel.app
 
-## How to play
+## Modules
 
-The game opens on a menu: **Play the puzzle**, **Free play**, **How to play** and **High scores**.
+The app opens on a home screen with three separate modules, one per must-have requirement.
+
+| # | Module | Requirement | Code |
+|---|---|---|---|
+| 1 | **Order data** | Pre-processing: one month of order lines turned into JSON (top 100 products, pick counts, orders) | `preprocess.py`, `src/modules/data` |
+| 2 | **Warehouse replay** | 3D grid warehouse (racks, aisles, packing dock, animated picker) replaying orders with live distance and time | `src/modules/twin` |
+| 3 | **Slotting game** | Swap products between slots, replay the same orders, compare walking distance and pick time against the automatic baseline | `src/modules/game` |
+
+`src/core` holds what all three share: the simulator (`engine/`: geometry, routing, scoring, layouts) and data
+loading. The replay module is read-only: no swapping, scoring or optimiser. Everything game-related lives in
+module 3, which reuses the replay's 3D scene. `src/modules/boundaries.test.ts` fails the build if a module
+imports one it shouldn't (core imports no module; data and replay never import the game).
+
+## How to play (module 3)
+
+The game opens on its own menu: **Play the puzzle**, **Free play**, **How to play** and **High scores**.
 
 - **Play the puzzle (Challenge mode):** start from the Starting shelves (the plan's Baseline) with **10 swaps**.
   Click a shelf to pick it up, point at another to see the points the swap would earn, click to swap.

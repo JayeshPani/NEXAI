@@ -3,9 +3,10 @@
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
-import { DOCK, leg, pts } from '../engine/geometry';
-import { PICK_TIME, WALK_SPEED, routeOrder, slotsOf } from '../engine/sim';
-import { useGame } from '../store';
+import { DOCK, leg, pts } from '../../../core/engine/geometry';
+import { PICK_TIME, WALK_SPEED, routeOrder, slotsOf } from '../../../core/engine/sim';
+import type { Order } from '../../../core/engine/types';
+import { useReplay } from '../replayStore';
 import { to3 } from './coords';
 
 type Seg =
@@ -26,42 +27,42 @@ function timeline(slotsPath: number[]): Seg[] {
   return segs;
 }
 
-export function Picker() {
+export function Picker({ orders, getAssign }: { orders: Order[]; getAssign: () => number[] }) {
   const group = useRef<Group>(null);
-  const replayId = useGame(s => s.replayId);
-  const st = useRef({ order: -1, segs: [] as Seg[], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1 });
+  const replayId = useReplay(s => s.replayId);
+  const st = useRef({ order: -1, segs: [] as Seg[], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1, stop: -1, totalDist: 0, totalTime: 0 });
 
   useEffect(() => {
-    st.current = { order: -1, segs: [], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1 };
+    st.current = { order: -1, segs: [], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1, stop: -1, totalDist: 0, totalTime: 0 };
     const d = pts[DOCK];
     group.current?.position.set(...to3(d.x, d.y));
   }, [replayId]);
 
   useFrame((_, delta) => {
-    const g = useGame.getState();
+    const g = useReplay.getState();
     if (!g.playing || !group.current) return;
     const s = st.current;
     let left = Math.min(delta, 0.1) * g.speed;   // seconds of sim time this frame
 
     const startOrder = (i: number) => {
-      const o = g.sample[i];
-      s.order = i; s.seg = 0; s.segT = 0; s.t = 0; s.dist = 0; s.visited = -1;
-      s.segs = timeline(routeOrder(slotsOf(o, g.engine!.assign)).path);
+      if (s.order >= 0) { s.totalDist += s.dist; s.totalTime += s.t; }
+      s.order = i; s.seg = 0; s.segT = 0; s.t = 0; s.dist = 0; s.visited = -1; s.stop = -1;
+      s.segs = timeline(routeOrder(slotsOf(orders[i], getAssign())).path);
     };
     if (s.order < 0) startOrder(0);
 
     while (left > 0) {
       if (s.seg >= s.segs.length) {
-        if (s.order + 1 >= g.sample.length) {
+        if (s.order + 1 >= orders.length) {
           push(true);
-          useGame.setState({ playing: false });
+          useReplay.setState({ playing: false });
           return;
         }
         startOrder(s.order + 1);
         continue;
       }
       const seg = s.segs[s.seg];
-      if (seg.kind === 'pick' && s.visited !== s.seg) { s.visited = s.seg; g.visit(seg.slot); }
+      if (seg.kind === 'pick' && s.visited !== s.seg) { s.visited = s.seg; s.stop++; g.visit(seg.slot); }
       const step = Math.min(left, seg.dur - s.segT);
       s.segT += step; s.t += step; left -= step;
       if (seg.kind === 'walk') {
@@ -79,8 +80,11 @@ export function Picker() {
     function push(done: boolean) {
       const cur = s.segs[s.seg];
       const partial = cur?.kind === 'walk' ? cur.len * (s.segT / cur.dur) : 0;
-      const o = g.sample[s.order];
-      g.setLive({ order: s.order + 1, orderId: o.id, lines: o.lines.length, dist: s.dist + partial, time: s.t, done });
+      const o = orders[s.order];
+      g.setLive({
+        order: s.order + 1, orderId: o.id, lines: o.lines.length, dist: s.dist + partial, time: s.t, done,
+        totalDist: s.totalDist + s.dist + partial, totalTime: s.totalTime + s.t, stop: s.stop,
+      });
     }
   });
 

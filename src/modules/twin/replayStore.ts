@@ -1,0 +1,39 @@
+// Twin module: replay state for Pip (play/pause, speed, live counters, rack visits for the heatmap).
+// Reused by the game module so the player can replay the same orders on their layout.
+import { create } from 'zustand';
+
+export const SPEEDS = [1, 10, 50] as const;
+export type Live = {
+  order: number; orderId: string; lines: number; dist: number; time: number; done: boolean;
+  totalDist: number; totalTime: number;   // across all orders replayed so far
+  stop: number;                            // index of the current pick within the order, -1 while walking out
+};
+
+type ReplayState = {
+  playing: boolean; speed: number; replayId: number; live: Live | null;
+  heatmap: boolean; visits: number[];
+  togglePlay: () => void;
+  restart: () => void;
+  reset: () => void;
+  setSpeed: (n: number) => void;
+  setLive: (l: Live | null) => void;
+  visit: (slot: number) => void;
+  toggleHeatmap: () => void;
+};
+
+const blank = () => Array<number>(100).fill(0);
+
+export const useReplay = create<ReplayState>((set, get) => ({
+  playing: false, speed: 10, replayId: 0, live: null, heatmap: false, visits: blank(),
+  togglePlay: () => {
+    const { playing, live } = get();
+    if (!playing && live?.done) get().restart();
+    else set({ playing: !playing });
+  },
+  restart: () => set({ replayId: get().replayId + 1, live: null, visits: blank(), playing: true }),
+  reset: () => set({ replayId: get().replayId + 1, live: null, visits: blank(), playing: false }),
+  setSpeed: speed => set({ speed }),
+  setLive: live => set({ live }),
+  visit: slot => { const visits = [...get().visits]; visits[slot]++; set({ visits }); },
+  toggleHeatmap: () => set({ heatmap: !get().heatmap }),
+}));

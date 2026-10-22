@@ -1,7 +1,7 @@
 // optimizer.worker.ts — runs AI Suggest off the main thread (Plan v2, Section 8).
 // Tuned on the train weeks; the caller scores the result on the test week with a fresh engine.
-import { anneal, tuneT0 } from './engine/anneal';
-import type { Order } from './engine/types';
+import { anneal, tuneT0 } from './anneal';
+import type { Order } from '../../core/engine/types';
 
 export type OptimizerRequest = {
   assign: number[]; train: Order[]; affinityPartners: number[][]; budgetMs?: number; T0?: number;

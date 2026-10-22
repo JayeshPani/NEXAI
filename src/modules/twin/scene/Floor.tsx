@@ -1,7 +1,7 @@
 // Floor, painted aisle/cross-aisle centerlines and the PACKING dock (Section 6.1)
 import { useMemo } from 'react';
 import { CanvasTexture, SRGBColorSpace } from 'three';
-import { AISLES, L, PITCH, pts, DOCK } from '../engine/geometry';
+import { AISLES, L, PITCH, pts, DOCK } from '../../../core/engine/geometry';
 import { CENTER, to3 } from './coords';
 
 const LINE = '#ffc93c';

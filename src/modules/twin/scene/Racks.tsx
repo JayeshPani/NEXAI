@@ -1,25 +1,26 @@
-// 100 rack slots as one InstancedMesh (one draw call). Colours: popularity, heatmap or selection.
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+// 100 rack slots as one InstancedMesh (one draw call). Colours: train-week picks, visit heatmap, or selection.
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Color, Object3D, type InstancedMesh } from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
-import { samePickPoint } from '../engine/layouts';
-import { useGame } from '../store';
+import { samePickPoint } from '../../../core/engine/layouts';
+import { useData } from '../../../core/appStore';
 import { BAY_LEN, RACK_DEPTH, RACK_HEIGHT, rackCenter } from './coords';
 
 const COLD = new Color('#4f9be0'), MID = new Color('#ffc93c'), HOT = new Color('#e4572e');
 const HEAT_LO = new Color('#e8edf2'), HEAT_HI = new Color('#c2185b');
 const SELECTED = new Color('#33a867'), PARTNER = new Color('#9b5de5'), DISABLED = new Color('#b8bec6');
 
-export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void }) {
+export type RacksProps = {
+  at: number[];                         // slot -> product
+  heatmap: boolean; visits: number[];
+  selected?: number | null; hovered?: number | null; partnerSlots?: Set<number>;
+  onSlotClick?: (slot: number) => void;
+  onSlotHover?: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void;
+};
+
+export function Racks({ at, heatmap, visits, selected = null, hovered = null, partnerSlots, onSlotClick, onSlotHover }: RacksProps) {
   const ref = useRef<InstancedMesh>(null);
-  const data = useGame(s => s.data)!;
-  const at = useGame(s => s.at);
-  const selected = useGame(s => s.selected);
-  const hovered = useGame(s => s.hovered);
-  const heatmap = useGame(s => s.heatmap);
-  const visits = useGame(s => s.visits);
-  const assign = useGame(s => s.assign);
-  const clickSlot = useGame(s => s.clickSlot);
+  const data = useData();
 
   useLayoutEffect(() => {
     const o = new Object3D();
@@ -30,11 +31,6 @@ export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEve
     }
     ref.current!.instanceMatrix.needsUpdate = true;
   }, []);
-
-  const partnerSlots = useMemo(() => {
-    if (selected === null) return new Set<number>();
-    return new Set(data.topPartners[at[selected]].map(p => assign[p]));
-  }, [selected, at, assign, data]);
 
   // setColorAt for all 100 instances, then instanceColor.needsUpdate (Section 6.1)
   useEffect(() => {
@@ -49,8 +45,8 @@ export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEve
       }
       if (selected !== null) {
         if (s === selected) c.copy(SELECTED);
-        else if (samePickPoint(s, selected)) c.copy(DISABLED);   // not a valid target
-        else if (partnerSlots.has(s)) c.copy(PARTNER);
+        else if (samePickPoint(s, selected)) c.copy(DISABLED);   // not a valid swap target
+        else if (partnerSlots?.has(s)) c.copy(PARTNER);
       }
       if (s === hovered && s !== selected) c.offsetHSL(0, 0, -0.12);
       mesh.setColorAt(s, c);
@@ -62,9 +58,9 @@ export function Racks({ onHover }: { onHover: (slot: number | null, e?: ThreeEve
     <instancedMesh
       ref={ref}
       args={[undefined, undefined, 100]}
-      onClick={e => { e.stopPropagation(); if (e.delta > 4) return; clickSlot(e.instanceId!); }}
-      onPointerMove={e => { e.stopPropagation(); onHover(e.instanceId ?? null, e); }}
-      onPointerOut={() => onHover(null)}
+      onClick={e => { e.stopPropagation(); if (e.delta > 4) return; onSlotClick?.(e.instanceId!); }}
+      onPointerMove={e => { e.stopPropagation(); onSlotHover?.(e.instanceId ?? null, e); }}
+      onPointerOut={() => onSlotHover?.(null)}
     >
       <boxGeometry args={[RACK_DEPTH * 0.92, RACK_HEIGHT, BAY_LEN * 0.92]} />
       <meshStandardMaterial roughness={0.7} />

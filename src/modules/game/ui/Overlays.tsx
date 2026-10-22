@@ -1,12 +1,13 @@
 // Tooltip with swap preview, swap pop-up, toast and the puzzle's end screen
 import { useState } from 'react';
-import { addScore, qualifies } from '../game/leaderboard';
-import { pitches, pointsFor, starsFor, swapVerdict } from '../game/scoring';
-import { samePickPoint } from '../engine/layouts';
-import { useGame, useSaved } from '../store';
+import { addScore, qualifies } from '../leaderboard';
+import { pitches, pointsFor, starsFor, swapVerdict } from '../scoring';
+import { samePickPoint } from '../../../core/engine/layouts';
+import { Tooltip as TooltipCard } from '../../../core/ui/Tooltip';
+import { useGame, useSaved } from '../gameStore';
 import { Stars } from './Stars';
 
-export function Tooltip({ x, y }: { x: number; y: number }) {
+export function SwapTooltip({ x, y }: { x: number; y: number }) {
   const { hovered, selected, preview, data, at, mode, swapsUsed, ended } = useGame();
   if (hovered === null || !data || ended) return null;
   const p = data.products[at[hovered]];
@@ -14,7 +15,7 @@ export function Tooltip({ x, y }: { x: number; y: number }) {
   const outOfSwaps = mode === 'challenge' && swapsUsed >= 10;
   const pts = preview === null ? null : pointsFor(-preview);
   return (
-    <div className="tooltip" style={{ left: Math.min(x + 16, window.innerWidth - 260), top: y + 16 }}>
+    <TooltipCard x={x} y={y}>
       <div className="tt-name">{p.name}</div>
       <div className="tt-meta">Picked {p.picksTrain} times in the first three weeks</div>
       {twin && <div className="tt-hint">Same spot for Pip, no change</div>}
@@ -25,7 +26,7 @@ export function Tooltip({ x, y }: { x: number; y: number }) {
       )}
       {selected === null && <div className="tt-hint">Click to pick up this shelf</div>}
       {selected === hovered && <div className="tt-hint">Click again to put it back</div>}
-    </div>
+    </TooltipCard>
   );
 }
 
