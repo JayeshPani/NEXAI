@@ -127,7 +127,8 @@ jobs:
         env:
           URL: ${{ steps.deploy.outputs.url }}
         run: |
-          fetch() { vercel curl "$1" --deployment "$URL" --yes --token="$VERCEL_TOKEN"; }
+          # vercel curl forwards unknown flags to curl, so auth comes from the VERCEL_TOKEN env var
+          fetch() { vercel curl "$1" --deployment "$URL" --yes; }
           fetch / > index.html
           grep -q 'id="root"' index.html || { echo "::error::$URL/ did not return the app shell"; cat index.html | head -20; exit 1; }
           if [ -f public/data/products.json ]; then
