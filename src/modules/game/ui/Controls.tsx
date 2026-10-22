@@ -1,4 +1,5 @@
 // Game controls: replay (from the twin module), finish, start over, and ask the robot (AI Suggest)
+import { ColourBySwitch } from '../../twin/ui/ColourBy';
 import { ReplayControls } from '../../twin/ui/ReplayControls';
 import { useGame } from '../gameStore';
 import { pointsFor } from '../scoring';
@@ -6,10 +7,11 @@ import { pointsFor } from '../scoring';
 export function Controls() {
   const g = useGame();
   const { ai } = g;
-  const robotSaved = ai.stats && g.baseline ? g.baseline.totalDist - ai.stats.totalDist : 0;
+  const robotSaved = ai.stats && g.baseline ? g.baseline.totalTime - ai.stats.totalTime : 0;   // seconds, like the player's points
   return (
     <div className="controls">
       <ReplayControls />
+      <ColourBySwitch />
       <div className="group">
         {g.mode === 'challenge' && !g.ended && g.swapsUsed > 0 && (
           <button className="done-btn" onClick={g.finish}>I'm done</button>

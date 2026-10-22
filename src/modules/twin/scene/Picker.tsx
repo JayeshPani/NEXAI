@@ -1,10 +1,10 @@
 // Picker replay (Section 6.2): walks leg().pts between consecutive route stops, never its own
-// waypoints, at 1 m/s × playback speed, pausing 10 s of sim time at each pick.
+// waypoints, at 1 m/s × playback speed, pausing at each pick for its rule-based time (rules.ts).
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import { DOCK, leg, pts } from '../../../core/engine/geometry';
-import { PICK_TIME, WALK_SPEED, routeOrder, slotsOf } from '../../../core/engine/sim';
+import { WALK_SPEED, routeOrder, slotsOf } from '../../../core/engine/sim';
 import type { Order } from '../../../core/engine/types';
 import { useReplay } from '../replayStore';
 import { to3 } from './coords';
@@ -13,7 +13,7 @@ type Seg =
   | { kind: 'walk'; x0: number; y0: number; x1: number; y1: number; len: number; dur: number }
   | { kind: 'pick'; slot: number; dur: number };
 
-function timeline(slotsPath: number[]): Seg[] {
+function timeline(slotsPath: number[], pickAt: (slot: number) => number): Seg[] {
   const segs: Seg[] = [];
   let cx = pts[DOCK].x, cy = pts[DOCK].y;
   for (let i = 1; i < slotsPath.length; i++) {
@@ -22,12 +22,12 @@ function timeline(slotsPath: number[]): Seg[] {
       if (len > 1e-9) segs.push({ kind: 'walk', x0: cx, y0: cy, x1: w.x, y1: w.y, len, dur: len / WALK_SPEED });
       cx = w.x; cy = w.y;
     }
-    if (slotsPath[i] !== DOCK) segs.push({ kind: 'pick', slot: slotsPath[i], dur: PICK_TIME });
+    if (slotsPath[i] !== DOCK) segs.push({ kind: 'pick', slot: slotsPath[i], dur: pickAt(slotsPath[i]) });
   }
   return segs;
 }
 
-export function Picker({ orders, getAssign }: { orders: Order[]; getAssign: () => number[] }) {
+export function Picker({ orders, getAssign, pick }: { orders: Order[]; getAssign: () => number[]; pick: number[][] }) {
   const group = useRef<Group>(null);
   const replayId = useReplay(s => s.replayId);
   const st = useRef({ order: -1, segs: [] as Seg[], seg: 0, segT: 0, t: 0, dist: 0, lastPush: 0, visited: -1, stop: -1, totalDist: 0, totalTime: 0 });
@@ -47,7 +47,9 @@ export function Picker({ orders, getAssign }: { orders: Order[]; getAssign: () =
     const startOrder = (i: number) => {
       if (s.order >= 0) { s.totalDist += s.dist; s.totalTime += s.t; }
       s.order = i; s.seg = 0; s.segT = 0; s.t = 0; s.dist = 0; s.visited = -1; s.stop = -1;
-      s.segs = timeline(routeOrder(slotsOf(orders[i], getAssign())).path);
+      const assign = getAssign(), at: number[] = [];
+      assign.forEach((slot, p) => (at[slot] = p));
+      s.segs = timeline(routeOrder(slotsOf(orders[i], assign)).path, slot => pick[at[slot]][slot]);
     };
     if (s.order < 0) startOrder(0);
 

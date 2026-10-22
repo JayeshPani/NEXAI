@@ -2,9 +2,10 @@
 
 NEXAI 2026 Hackathon · Track 4 · PS 4.2
 
-A browser game that turns warehouse slotting into a puzzle. A 3D twin of a picking floor replays real
-November 2011 orders from Online Retail II. You rearrange 100 products; the twin replays exactly the same
-orders and scores walking distance and pick time before vs after.
+A browser game that turns warehouse slotting into a puzzle, set in **Holly & Ivy Gifts**, a UK gift and
+Christmas-décor wholesaler in its November rush (the company name is ours; the orders are real November 2011 orders
+from Online Retail II). A 3D twin of the picking floor replays those orders. You rearrange 100 products; the twin
+replays exactly the same orders and scores walking distance and pick time before vs after.
 
 **Live:** https://nexai-jayesh-panis-projects.vercel.app
 
@@ -30,16 +31,17 @@ The game opens on its own menu: **Play the puzzle**, **Free play**, **How to pla
 - **Play the puzzle (Challenge mode):** start from the Starting shelves (the plan's Baseline) with **10 swaps**.
   Click a shelf to pick it up, point at another to see the points the swap would earn, click to swap.
   Purple dashed lines point to the products most often bought together with the selected one.
-- **Scoring:** 1 point per metre Pip (the picker) no longer walks over all test-week orders.
-  Stars: 1 for any saving, 2 at 1,000 points, 3 at 2,500 points. A greedy 10-swap search reaches about 3,750,
-  which set these thresholds. Each swap shows a pop-up ("+320 Great swap!" / "−40 Oops, more walking").
+- **Scoring:** 1 point per second of picking time saved over all test-week orders (walking + forklift access).
+  Stars: 1 for any saving, 2 at 1,500 points, 3 at 4,000 points. A greedy 10-swap search reaches about 6,480,
+  which set these thresholds. Each swap shows a pop-up ("+320 Great swap!" / "−40 Oops, slower").
   Finish early with **I'm done**.
 - **High scores:** the top 8 puzzle scores, saved in this browser only (localStorage).
 - **Free play (Sandbox mode):** start from the Jumbled shelves (the plan's Original) with unlimited swaps.
 - **Ask the robot (AI Suggest):** simulated annealing in a Web Worker (5 s budget), tuned on the train weeks and
   scored on the test week.
 - **Watch Pip pick** replays 25 sample orders from the test week (Walk 1×, Run 10×, Zoom 50×).
-  **Busy shelves** recolours racks by visits during the replay.
+- **Colour by** Category, Class, FL, Picks or Busy (visits during the replay). Every shelf top carries a label:
+  category icon, short product name, class badge and FL badge.
 - **Grown-up stats** shows the plan's full scoreboard (total, mean, median, p90, average time).
 - Esc puts a shelf back. Swapping the two shelves facing each other across an aisle changes nothing
   (same pick point) and costs no swap.
@@ -58,6 +60,30 @@ The game opens on its own menu: **Play the puzzle**, **Free play**, **How to pla
   are kept and reported via median and p90.
 - Affinity (products ordered together) and the Baseline are computed from the train weeks only.
 
+## Product attributes (learn weeks only)
+
+`products.json` entries are `{ id, code, name, picksTrain, category, price, valueTrain, abc, fl }`.
+
+| Field | Rule |
+|---|---|
+| `category` | Keyword rules on the description, first match wins: Cosy & warm, Lights & candles, Bags & storage, Kitchen & baking, Party & paper, Christmas, Games & crafts, Home & garden (fallback Gifts & gadgets, currently unused) |
+| `price` | Median unit price (£) |
+| `valueTrain` | Σ price × units |
+| `abc` | Cost class by sales value rank: top 20 products = A (48% of value), next 30 = B (28%), last 50 = C (24%) |
+| `fl` | Forklift/handling level 0–7 from the mean units per order line: ≤6, ≤8, ≤10, ≤12, ≤14, ≤17, ≤22, >22 (FL0 by hand … FL7 forklift and pallet) |
+
+## Time rules (`src/core/engine/rules.ts`)
+
+| Rule | Time |
+|---|---|
+| Walking | 1 m/s along aisles |
+| Handling per order line | 6 s + 4 s × FL (FL0 6 s … FL7 34 s) |
+| Cost-class check | A +5 s (scan and seal), B +2 s, C +0 s |
+| Forklift access | FL 4 and up: +2 s per metre between the shelf and the nearest cross aisle |
+
+Handling and the class check are the same on every layout. Walking and forklift access depend on where products
+sit, so slotting now has two goals: fast movers near the dock, and forklift items near the aisle ends.
+
 ## Layout assumptions (our own design)
 
 | Parameter | Value |
@@ -70,7 +96,7 @@ The game opens on its own menu: **Play the puzzle**, **Free play**, **How to pla
 | Cross aisles | Front centerline y = 0, back centerline y = L = 15 |
 | Dock | (10, 0), on the front cross aisle in line with the middle aisle |
 | Walking speed | 1.0 m/s |
-| Pick time | 10 s per order line |
+| Pick time | Per order line, from the time rules below the data rules |
 | Picking policy | Single-order picking: one trip per order, dock → slots → dock |
 
 ## Routing and distance
@@ -84,21 +110,22 @@ The game opens on its own menu: **Play the puzzle**, **Free play**, **How to pla
 ## Metrics
 
 - Total, mean, median and p90 walking distance per order, over **all test-week orders**.
-- Average pick time per order = (walking distance / 1 m/s + 10 s × lines) / orders. Pick time per line is identical
-  across layouts, so only walking time differs.
+- Time per order = walking distance / 1 m/s + Σ pick time per line (time rules). Mean, median and p90 are reported.
+  The game and the optimiser score total time; walking is reported alongside.
 
 ## Results (test week, 735 orders)
 
-| Layout | Total | Mean / order | Median | p90 | Avg time / order | vs Original |
-|---|---|---|---|---|---|---|
-| Original (sorted by StockCode) | 51,723 m | 70.4 m | 70.0 m | 110.8 m | 2m 24s | — |
-| Baseline (fastest movers nearest the dock) | 49,659 m | 67.6 m | 68.4 m | 113.8 m | 2m 21s | −4.0% |
-| Best Challenge layout | _fill in after play-testing_ | | | | | |
-| AI Suggest (one 5 s run) | 43,031 m | 58.5 m | 52.8 m | 104.2 m | 2m 12s | −16.8% |
+| Layout | Total time | Time / order | Median | p90 | Total walk | Walk / order | Time vs Original |
+|---|---|---|---|---|---|---|---|
+| Original (sorted by StockCode) | 186,452 s | 253.7 s | 176.4 s | 503.0 s | 51,723 m | 70.4 m | — |
+| Baseline (fastest movers nearest the dock) | 184,645 s | 251.2 s | 177.8 s | 497.6 s | 49,659 m | 67.6 m | −1.0% |
+| Best Challenge layout | _fill in after play-testing_ | | | | | | |
+| AI Suggest (one 5 s run) | 172,291 s | 234.4 s | 163.6 s | 466.6 s | 45,025 m | 61.3 m | −7.6% |
 
-AI Suggest is randomised, so each run differs. Typical runs beat the Baseline by about 10–14% on the unseen test
-week (16.8% on train in the run above). It is seeded from the Baseline, tuned on the train weeks only, and its
-starting temperature is set so that roughly half of worsening moves are accepted.
+AI Suggest is randomised, so each run differs. Runs beat the Baseline by about 6–8% of total time on the unseen test
+week. It is seeded from the Baseline, minimises total time on the train weeks only, and its starting temperature is
+set so that roughly half of worsening moves are accepted. The Baseline only orders by pick frequency, so it ignores
+forklift access, which is why the optimiser has more to gain than walking alone suggests.
 
 ## Run locally
 
@@ -123,8 +150,9 @@ npm test
 ```
 
 Vitest covers the Section 5.4 checks: `leg()` symmetry, waypoint length equal to scored distance, same-aisle
-distance equal to |Δy|, no path through a rack, Baseline beats Original on train and test, deterministic scoring,
-`swapDelta` + commit equal to a full rescore, plus the optimizer. `scripts/validate_data.py` checks the JSON
+distance equal to |Δy|, no path through a rack, Baseline walks less than Original on train and test, deterministic
+scoring, `swapDelta` + commit equal to a full rescore (time and distance), the time rules, the optimizer and the
+module boundaries. `scripts/validate_data.py` checks the JSON
 contracts and the train/test hold-out.
 
 ## CI/CD

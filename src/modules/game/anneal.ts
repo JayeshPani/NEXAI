@@ -1,4 +1,5 @@
 // Simulated annealing over swaps (Plan v2, Section 8), shared by the worker and the tuning test.
+// Minimises total order time in seconds (walking + handling + forklift access, see core/engine/rules.ts).
 import { nearestProductTo } from '../../core/engine/layouts';
 import { makeEngine } from '../../core/engine/sim';
 import type { Order } from '../../core/engine/types';
@@ -18,10 +19,10 @@ function propose(assign: number[], partners: number[][], random: () => number): 
   return [p1, p2];
 }
 
-export function anneal(train: Order[], assign: number[], partners: number[][], opts: AnnealOptions = {}) {
+export function anneal(train: Order[], assign: number[], partners: number[][], pick: number[][], opts: AnnealOptions = {}) {
   const { budgetMs = 5000, T0 = 30, Tend = 1, random = Math.random, onProgress } = opts;
-  const eng = makeEngine(train, [...assign]);
-  let cur = eng.stats().totalDist, T = T0, it = 0;
+  const eng = makeEngine(train, [...assign], pick);
+  let cur = eng.stats().totalTime, T = T0, it = 0;
   let best = cur, bestAssign = [...eng.assign];
   const t0 = performance.now();
   for (let elapsed = 0; elapsed < budgetMs; elapsed = performance.now() - t0) {
@@ -39,8 +40,8 @@ export function anneal(train: Order[], assign: number[], partners: number[][], o
 }
 
 // "Start where roughly half of worsening moves are accepted": T0 = median(worsening delta) / ln 2
-export function tuneT0(train: Order[], assign: number[], partners: number[][], samples = 2000, random = Math.random) {
-  const eng = makeEngine(train, [...assign]);
+export function tuneT0(train: Order[], assign: number[], partners: number[][], pick: number[][], samples = 2000, random = Math.random) {
+  const eng = makeEngine(train, [...assign], pick);
   const worse: number[] = [];
   for (let k = 0; k < samples; k++) {
     const [p1, p2] = propose(eng.assign, partners, random);

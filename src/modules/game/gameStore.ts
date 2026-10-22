@@ -55,7 +55,7 @@ export const useGame = create<State>((set, get) => {
   const loadLayout = (assign: number[], extra: Partial<State> = {}) => {
     const { data } = get();
     if (!data) return;
-    const engine = makeEngine(data.orders.test, [...assign]);
+    const engine = makeEngine(data.orders.test, [...assign], data.pick);
     set({
       engine, assign: [...engine.assign], at: productAt(engine.assign), yours: engine.stats(),
       swapsUsed: 0, ended: false, selected: null, hovered: null, preview: null, feedback: null, ...extra,
@@ -73,8 +73,8 @@ export const useGame = create<State>((set, get) => {
       if (get().data === data) return;
       set({
         data,
-        original: scoreLayout(data.orders.test, data.originalAssign),
-        baseline: scoreLayout(data.orders.test, data.baselineAssign),
+        original: scoreLayout(data.orders.test, data.originalAssign, data.pick),
+        baseline: scoreLayout(data.orders.test, data.baselineAssign, data.pick),
       });
       loadLayout(data.baselineAssign);
     },
@@ -133,7 +133,7 @@ export const useGame = create<State>((set, get) => {
       if (!data || ai.status === 'running') return;
       worker?.terminate();
       worker = new Worker(new URL('./optimizer.worker.ts', import.meta.url), { type: 'module' });
-      const trainBase = scoreLayout(data.orders.train, data.baselineAssign).totalDist;
+      const trainBase = scoreLayout(data.orders.train, data.baselineAssign, data.pick).totalTime;
       set({ ai: { status: 'running', progress: 0, it: 0 } });
       worker.onmessage = ({ data: msg }: MessageEvent<OptimizerMessage>) => {
         if (msg.type === 'progress')
@@ -141,13 +141,13 @@ export const useGame = create<State>((set, get) => {
         // Score the returned layout on the test week with a fresh engine
         set({ ai: {
           status: 'done', progress: 1, it: msg.it, assign: msg.assign,
-          stats: scoreLayout(data.orders.test, msg.assign), trainGain: msg.cur / trainBase - 1,
+          stats: scoreLayout(data.orders.test, msg.assign, data.pick), trainGain: msg.cur / trainBase - 1,
         } });
         worker?.terminate();
         worker = null;
       };
       worker.postMessage({
-        assign: data.baselineAssign, train: data.orders.train, affinityPartners: data.partners, budgetMs: AI_BUDGET_MS,
+        assign: data.baselineAssign, train: data.orders.train, affinityPartners: data.partners, pick: data.pick, budgetMs: AI_BUDGET_MS,
       } satisfies OptimizerRequest);
     },
 
@@ -159,12 +159,12 @@ export const useGame = create<State>((set, get) => {
   };
 });
 
-// Points: metres saved vs the starting layout of the current mode (Starting shelves in the puzzle,
-// Jumbled shelves in free play)
+// Points: seconds saved (walking + forklift access) over all test-week orders vs the starting layout of the
+// current mode (Starting shelves in the puzzle, Jumbled shelves in free play)
 export function useSaved() {
   return useGame(s => {
     const start = s.mode === 'challenge' ? s.baseline : s.original;
-    return start && s.yours ? start.totalDist - s.yours.totalDist : 0;
+    return start && s.yours ? start.totalTime - s.yours.totalTime : 0;
   });
 }
 

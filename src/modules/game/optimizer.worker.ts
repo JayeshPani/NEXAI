@@ -4,16 +4,16 @@ import { anneal, tuneT0 } from './anneal';
 import type { Order } from '../../core/engine/types';
 
 export type OptimizerRequest = {
-  assign: number[]; train: Order[]; affinityPartners: number[][]; budgetMs?: number; T0?: number;
+  assign: number[]; train: Order[]; affinityPartners: number[][]; pick: number[][]; budgetMs?: number; T0?: number;
 };
 export type OptimizerMessage =
   | { type: 'progress'; cur: number; it: number; elapsed: number }
   | { type: 'done'; assign: number[]; cur: number; it: number };
 
-self.onmessage = ({ data: { assign, train, affinityPartners, budgetMs = 5000, T0 } }: MessageEvent<OptimizerRequest>) => {
+self.onmessage = ({ data: { assign, train, affinityPartners, pick, budgetMs = 5000, T0 } }: MessageEvent<OptimizerRequest>) => {
   // Tune T on the train data: start where roughly half of worsening moves are accepted
-  const T = T0 ?? tuneT0(train, assign, affinityPartners);
-  const result = anneal(train, assign, affinityPartners, {
+  const T = T0 ?? tuneT0(train, assign, affinityPartners, pick);
+  const result = anneal(train, assign, affinityPartners, pick, {
     budgetMs, T0: T, Tend: 5,
     onProgress: (cur, it, elapsed) => postMessage({ type: 'progress', cur, it, elapsed } satisfies OptimizerMessage),
   });

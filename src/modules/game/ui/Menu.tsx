@@ -13,7 +13,7 @@ export function Menu() {
           <div className="box-body">
             <h1 className="stamp">Pick &amp; Pack<br />Puzzle</h1>
             <p className="menu-intro">
-              Move the shelves around so Pip walks less. We replay the same real orders to check.
+              Move the shelves around so orders are quicker to pick. We replay the same real orders to check.
             </p>
             <div className="menu-actions">
               <button className="big primary" onClick={() => play('challenge')}>

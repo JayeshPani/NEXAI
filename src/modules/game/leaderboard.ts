@@ -1,6 +1,6 @@
 // High scores (Plan v2 stretch goal 5): stored in localStorage, so they live in this browser only.
 export type HighScore = { name: string; points: number; stars: number; at: string };
-const KEY = 'pip-high-scores-v1';
+const KEY = 'pip-high-scores-v2';   // v2: points are seconds saved (v1 was metres)
 export const MAX_SCORES = 8;
 
 export function readScores(): HighScore[] {

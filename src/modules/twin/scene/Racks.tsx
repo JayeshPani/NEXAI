@@ -1,9 +1,11 @@
-// 100 rack slots as one InstancedMesh (one draw call). Colours: train-week picks, visit heatmap, or selection.
+// 100 rack slots as one InstancedMesh (one draw call). Colour by category, class, FL, picks or visits; plus selection.
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Color, Object3D, type InstancedMesh } from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
 import { samePickPoint } from '../../../core/engine/layouts';
 import { useData } from '../../../core/appStore';
+import { ABC_COLOUR, CATEGORY, flColour } from '../../../core/categories';
+import type { ColourBy } from '../replayStore';
 import { BAY_LEN, RACK_DEPTH, RACK_HEIGHT, rackCenter } from './coords';
 
 const COLD = new Color('#4f9be0'), MID = new Color('#ffc93c'), HOT = new Color('#e4572e');
@@ -12,13 +14,13 @@ const SELECTED = new Color('#33a867'), PARTNER = new Color('#9b5de5'), DISABLED 
 
 export type RacksProps = {
   at: number[];                         // slot -> product
-  heatmap: boolean; visits: number[];
+  colourBy: ColourBy; visits: number[];
   selected?: number | null; hovered?: number | null; partnerSlots?: Set<number>;
   onSlotClick?: (slot: number) => void;
   onSlotHover?: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void;
 };
 
-export function Racks({ at, heatmap, visits, selected = null, hovered = null, partnerSlots, onSlotClick, onSlotHover }: RacksProps) {
+export function Racks({ at, colourBy, visits, selected = null, hovered = null, partnerSlots, onSlotClick, onSlotHover }: RacksProps) {
   const ref = useRef<InstancedMesh>(null);
   const data = useData();
 
@@ -38,9 +40,13 @@ export function Racks({ at, heatmap, visits, selected = null, hovered = null, pa
     const c = new Color();
     const maxVisits = Math.max(1, ...visits);
     for (let s = 0; s < 100; s++) {
-      if (heatmap) c.copy(HEAT_LO).lerp(HEAT_HI, Math.sqrt(visits[s] / maxVisits));
+      const p = data.products[at[s]];
+      if (colourBy === 'busy') c.copy(HEAT_LO).lerp(HEAT_HI, Math.sqrt(visits[s] / maxVisits));
+      else if (colourBy === 'category') c.set(CATEGORY[p.category].colour);
+      else if (colourBy === 'class') c.set(ABC_COLOUR[p.abc]);
+      else if (colourBy === 'fl') c.setStyle(flColour(p.fl));
       else {
-        const f = (data.products[at[s]].picksTrain - data.minPicks) / (data.maxPicks - data.minPicks || 1);
+        const f = (p.picksTrain - data.minPicks) / (data.maxPicks - data.minPicks || 1);
         if (f < 0.5) c.copy(COLD).lerp(MID, f * 2); else c.copy(MID).lerp(HOT, f * 2 - 1);
       }
       if (selected !== null) {
@@ -52,7 +58,7 @@ export function Racks({ at, heatmap, visits, selected = null, hovered = null, pa
       mesh.setColorAt(s, c);
     }
     mesh.instanceColor!.needsUpdate = true;
-  }, [at, selected, hovered, heatmap, visits, partnerSlots, data]);
+  }, [at, selected, hovered, colourBy, visits, partnerSlots, data]);
 
   return (
     <instancedMesh

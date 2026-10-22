@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 
 export const SPEEDS = [1, 10, 50] as const;
+export const COLOUR_BY = ['category', 'class', 'fl', 'picks', 'busy'] as const;
+export type ColourBy = typeof COLOUR_BY[number];
 export type Live = {
   order: number; orderId: string; lines: number; dist: number; time: number; done: boolean;
   totalDist: number; totalTime: number;   // across all orders replayed so far
@@ -11,20 +13,20 @@ export type Live = {
 
 type ReplayState = {
   playing: boolean; speed: number; replayId: number; live: Live | null;
-  heatmap: boolean; visits: number[];
+  colourBy: ColourBy; visits: number[];
   togglePlay: () => void;
   restart: () => void;
   reset: () => void;
   setSpeed: (n: number) => void;
   setLive: (l: Live | null) => void;
   visit: (slot: number) => void;
-  toggleHeatmap: () => void;
+  setColourBy: (c: ColourBy) => void;
 };
 
 const blank = () => Array<number>(100).fill(0);
 
 export const useReplay = create<ReplayState>((set, get) => ({
-  playing: false, speed: 10, replayId: 0, live: null, heatmap: false, visits: blank(),
+  playing: false, speed: 10, replayId: 0, live: null, colourBy: 'category', visits: blank(),
   togglePlay: () => {
     const { playing, live } = get();
     if (!playing && live?.done) get().restart();
@@ -35,5 +37,5 @@ export const useReplay = create<ReplayState>((set, get) => ({
   setSpeed: speed => set({ speed }),
   setLive: live => set({ live }),
   visit: slot => { const visits = [...get().visits]; visits[slot]++; set({ visits }); },
-  toggleHeatmap: () => set({ heatmap: !get().heatmap }),
+  setColourBy: colourBy => set({ colourBy }),
 }));

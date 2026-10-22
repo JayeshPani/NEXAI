@@ -1,5 +1,6 @@
 // Home: the three modules, one per MVP requirement, in the order data flows through them
 import { useApp } from './core/appStore';
+import { BUSINESS } from './core/categories';
 
 const MODULES = [
   { n: 1, id: 'data', title: 'Order data', body: 'See what we made from one month of real orders: the top 100 products, how often each is picked, and every order.' },
@@ -13,7 +14,8 @@ export function Home() {
     <div className="home">
       <header className="home-head">
         <h1 className="stamp small">Pick &amp; Pack</h1>
-        <p>A digital twin of a warehouse picking floor, built on real November 2011 orders.</p>
+        <p><b>{BUSINESS.name}</b> · {BUSINESS.tagline}</p>
+        <p className="home-sub">A digital twin of the picking floor, built on the shop's real orders.</p>
       </header>
       <ol className="modules">
         {MODULES.map(m => (

@@ -6,7 +6,7 @@ import { pointsFor } from '../scoring';
 export function GameHeader() {
   const { mode, swapsUsed, view } = useGame();
   const points = pointsFor(useSaved());
-  const subtitle = view === 'menu' ? 'Re-arrange the shelves so Pip walks less'
+  const subtitle = view === 'menu' ? 'Re-arrange the shelves so orders are quicker to pick'
     : mode === 'challenge' ? 'Puzzle: beat the starting shelves in 10 swaps' : 'Free play: started from jumbled shelves';
   return (
     <ModuleHeader n={3} title="Slotting game" subtitle={subtitle}>

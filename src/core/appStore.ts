@@ -11,11 +11,16 @@ type AppState = {
   go: (screen: Screen) => void;
 };
 
+let pending: Promise<void> | null = null;   // load once, even if React runs the effect twice
+
 export const useApp = create<AppState>((set, get) => ({
   data: null, error: null, screen: 'home',
-  load: async () => {
-    if (get().data) return;
-    try { set({ data: await loadData() }); } catch (e) { set({ error: e instanceof Error ? e.message : String(e) }); }
+  load: () => {
+    if (get().data) return Promise.resolve();
+    pending ??= loadData()
+      .then(data => set({ data }))
+      .catch(e => { pending = null; set({ error: e instanceof Error ? e.message : String(e) }); });
+    return pending;
   },
   go: screen => set({ screen }),
 }));

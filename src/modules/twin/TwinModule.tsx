@@ -2,12 +2,15 @@
 // Read-only: no swapping, scoring or optimiser (those live in the game module).
 import { useEffect, useState } from 'react';
 import { useData } from '../../core/appStore';
+import { ABC_LABEL, CATEGORY, FL_LABEL } from '../../core/categories';
 import { pts } from '../../core/engine/geometry';
 import { productAt } from '../../core/engine/layouts';
+import { RULES, accessTime, handlingTime } from '../../core/engine/rules';
 import { ModuleHeader } from '../../core/ui/ModuleHeader';
 import { Tooltip } from '../../core/ui/Tooltip';
 import { useReplay } from './replayStore';
 import { WarehouseScene } from './scene/Scene';
+import { ColourBySwitch, ColourLegend } from './ui/ColourBy';
 import { PickList } from './ui/PickList';
 import { ReplayControls } from './ui/ReplayControls';
 import { Ticker } from './ui/Ticker';
@@ -16,7 +19,7 @@ export function TwinModule() {
   const data = useData();
   const assign = data.originalAssign;
   const at = productAt(assign);
-  const { heatmap, visits, reset } = useReplay();
+  const { colourBy, visits, reset } = useReplay();
   const [hover, setHover] = useState<{ slot: number; x: number; y: number } | null>(null);
   useEffect(() => { reset(); }, [reset]);
 
@@ -28,30 +31,45 @@ export function TwinModule() {
           <WarehouseScene
             orders={data.sample} getAssign={() => assign}
             racks={{
-              at, heatmap, visits, hovered: hover?.slot ?? null,
+              at, colourBy, visits, hovered: hover?.slot ?? null,
               onSlotHover: (slot, e) => setHover(slot === null ? null : { slot, x: e?.nativeEvent.clientX ?? 0, y: e?.nativeEvent.clientY ?? 0 }),
             }}
           />
           <Ticker showTotals />
-          <div className="legend">
-            {heatmap ? <span><i className="sw heat" /> Pip's visits so far</span> : <span><i className="sw picks" /> rarely picked → picked a lot</span>}
-          </div>
-          {hover && (
-            <Tooltip x={hover.x} y={hover.y}>
-              <div className="tt-name">{data.products[at[hover.slot]].name}</div>
-              <div className="tt-meta">Shelf {hover.slot} · aisle {pts[hover.slot].aisle + 1} · picked {data.products[at[hover.slot]].picksTrain} times in 1–21 Nov</div>
-            </Tooltip>
-          )}
+          <ColourLegend />
+          {hover && <ShelfTooltip slot={hover.slot} product={at[hover.slot]} x={hover.x} y={hover.y} />}
         </div>
         <PickList assign={assign} />
       </div>
       <div className="controls">
         <ReplayControls />
+        <ColourBySwitch />
         <p className="note controls-note">
           Replaying {data.sample.length} real orders from 22–30 Nov 2011 on the shelves as received (sorted by product code).
-          Walking 1 m/s, picking 10 s per item, single-order trips from the packing desk.
+          Walking {RULES.walkSpeed} m/s; each pick takes {RULES.handlingBase} s + {RULES.handlingPerFl} s per FL level, +{RULES.classCheck.A} s for class A,
+          {' '}and forklift items (FL {RULES.forkliftFrom}+) add {RULES.accessPerMetre} s per metre into the aisle.
         </p>
       </div>
     </div>
+  );
+}
+
+/** Product card for a hovered shelf: category, class, FL and pick time on this shelf */
+export function ShelfTooltip({ slot, product, x, y, children }: { slot: number; product: number; x: number; y: number; children?: React.ReactNode }) {
+  const p = useData().products[product];
+  const access = accessTime(p, slot);
+  return (
+    <Tooltip x={x} y={y}>
+      <div className="tt-name">{CATEGORY[p.category].icon} {p.name}</div>
+      <div className="tt-meta">{p.category} · £{p.price.toFixed(2)} · shelf {slot}, aisle {pts[slot].aisle + 1}</div>
+      <div className="tt-tags">
+        <span className={`tag abc-${p.abc}`}>{ABC_LABEL[p.abc]}</span>
+        <span className="tag fl">FL{p.fl} · {FL_LABEL(p.fl)}</span>
+      </div>
+      <div className="tt-meta">
+        {handlingTime(p)} s per pick{access ? ` + ${access.toFixed(0)} s forklift access here` : ''} · picked {p.picksTrain}× in 1–21 Nov
+      </div>
+      {children}
+    </Tooltip>
   );
 }

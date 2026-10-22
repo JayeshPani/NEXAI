@@ -5,6 +5,7 @@ import { useData } from '../../core/appStore';
 import { useReplay } from '../twin/replayStore';
 import { AffinityLines } from '../twin/scene/AffinityLines';
 import { WarehouseScene } from '../twin/scene/Scene';
+import { ColourLegend } from '../twin/ui/ColourBy';
 import { Ticker } from '../twin/ui/Ticker';
 import { useGame } from './gameStore';
 import { BeforeAfter } from './ui/BeforeAfter';
@@ -17,7 +18,7 @@ import { Scoreboard } from './ui/Scoreboard';
 export function GameModule() {
   const data = useData();
   const g = useGame();
-  const { heatmap, visits } = useReplay();
+  const { colourBy, visits } = useReplay();
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
 
   const init = useGame(s => s.init);
@@ -41,7 +42,7 @@ export function GameModule() {
         <WarehouseScene
           orders={data.sample} getAssign={() => useGame.getState().engine!.assign}
           racks={{
-            at: g.at, heatmap, visits, selected: g.selected, hovered: g.hovered, partnerSlots,
+            at: g.at, colourBy, visits, selected: g.selected, hovered: g.hovered, partnerSlots,
             onSlotClick: playing ? g.clickSlot : undefined,
             onSlotHover: playing ? (slot, e) => {
               if (e) setPointer({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY });
@@ -54,10 +55,7 @@ export function GameModule() {
         {playing && (<>
           <Ticker hideIdle />
           <BeforeAfter />
-          <div className="legend">
-            {heatmap ? <span><i className="sw heat" /> Pip's visits while you watch</span> : <span><i className="sw picks" /> rarely picked → picked a lot</span>}
-            <span><i className="sw partner" /> bought together</span>
-          </div>
+          <ColourLegend extra={<span><i className="sw partner" /> bought together</span>} />
           <Tip />
           <SwapFeedback />
           <Toast />
@@ -79,7 +77,7 @@ function Tip() {
   const { selected, swapsUsed, mode, ai } = useGame();
   let text = 'Click a shelf to pick it up.';
   if (selected !== null) text = 'Purple lines show what people buy with it. Point at a shelf to see the points, then click to swap.';
-  else if (mode === 'challenge' && swapsUsed > 0 && swapsUsed < 10) text = `${10 - swapsUsed} swaps left. Shelves near the packing desk are quickest for Pip.`;
+  else if (mode === 'challenge' && swapsUsed > 0 && swapsUsed < 10) text = `${10 - swapsUsed} swaps left. Near the packing desk is quickest; forklift items (FL4+) like aisle ends.`;
   else if (mode === 'sandbox' && ai.status === 'idle') text = 'Free play: swap as much as you like, or ask the robot for ideas.';
   return <div className="tip"><span className="pip-face" aria-hidden="true" />{text}</div>;
 }

@@ -2,10 +2,12 @@
 // Read-only view of products.json, orders.json and affinity.json.
 import { useMemo, useState } from 'react';
 import { useData } from '../../core/appStore';
-import type { Order } from '../../core/engine/types';
+import { ABC_COLOUR, BUSINESS, CATEGORY, FL_LABEL, flColour } from '../../core/categories';
+import { RULES, handlingTime } from '../../core/engine/rules';
+import type { Category, Order } from '../../core/engine/types';
 import { ModuleHeader } from '../../core/ui/ModuleHeader';
 
-type Tab = 'products' | 'orders' | 'pairs';
+type Tab = 'products' | 'rules' | 'orders' | 'pairs';
 
 export function DataModule() {
   const data = useData();
@@ -17,22 +19,24 @@ export function DataModule() {
 
   return (
     <div className="app data">
-      <ModuleHeader n={1} title="Order data" subtitle="One month of real order lines from Online Retail II, turned into JSON" />
+      <ModuleHeader n={1} title="Order data" subtitle={`${BUSINESS.name}: one month of real order lines, turned into JSON`} />
       <main className="data-main">
         <section className="facts-row" aria-label="Summary">
           <Fact big={data.products.length.toString()} small="top products by picks" />
           <Fact big={(train.length + test.length).toLocaleString()} small="orders in November 2011" />
           <Fact big={lines.toLocaleString()} small="order lines (picks)" />
           <Fact big={`${median} / ${p90}`} small="items per order, median / p90" />
-          <Fact big={`${train.length.toLocaleString()} / ${test.length}`} small="orders to learn from (1–21 Nov) / to test on (22–30 Nov)" />
+          <Fact big={`${train.length.toLocaleString()} / ${test.length}`} small="orders: learn 1–21 Nov / test 22–30 Nov" />
         </section>
 
         <div className="tabs" role="tablist">
           <button role="tab" aria-selected={tab === 'products'} className={tab === 'products' ? 'on' : ''} onClick={() => setTab('products')}>Products and pick counts</button>
+          <button role="tab" aria-selected={tab === 'rules'} className={tab === 'rules' ? 'on' : ''} onClick={() => setTab('rules')}>Warehouse rules</button>
           <button role="tab" aria-selected={tab === 'orders'} className={tab === 'orders' ? 'on' : ''} onClick={() => setTab('orders')}>Orders</button>
           <button role="tab" aria-selected={tab === 'pairs'} className={tab === 'pairs' ? 'on' : ''} onClick={() => setTab('pairs')}>Bought together</button>
         </div>
         {tab === 'products' && <Products />}
+        {tab === 'rules' && <Rules />}
         {tab === 'orders' && <OrderList />}
         {tab === 'pairs' && <Pairs />}
 
@@ -43,6 +47,8 @@ export function DataModule() {
             <li>Only real products are kept: codes of five digits plus up to two letters (no postage, fees or vouchers). Codes are upper-cased so 85049a and 85049A merge.</li>
             <li>Month used: November 2011. The top 100 products are ranked by order lines in 1–21 Nov only, so the test week stays unseen.</li>
             <li>Lines for other products are dropped, and orders left empty are dropped. Large wholesale orders are kept.</li>
+            <li>Category: keyword rules on the product description. Price: median unit price. Class: products ranked by sales value
+              (price × units) in 1–21 Nov; top 20 = A, next 30 = B, last 50 = C. FL: mean units per order line, banded 0–7.</li>
             <li>Files: <code>products.json</code>, <code>orders.json</code> (train / test), <code>affinity.json</code> (top 500 pairs), made by <code>preprocess.py</code>.</li>
           </ul>
         </details>
@@ -66,7 +72,8 @@ function Products() {
         {shown.map(p => (
           <li key={p.id}>
             <span className="rank">{p.id + 1}</span>
-            <span className="pname">{p.name} <small>{p.code}</small></span>
+            <span className="pname">{CATEGORY[p.category].icon} {p.name} <small>{p.code} · £{p.price.toFixed(2)}</small></span>
+            <span className="badges"><b className={`abc-${p.abc}`}>{p.abc}</b><b className="fl-badge" style={{ background: flColour(p.fl), color: p.fl >= 4 ? '#fff' : undefined }}>FL{p.fl}</b></span>
             <span className="bar"><i style={{ width: `${(p.picksTrain / maxPicks) * 100}%` }} /></span>
             <span className="num">{p.picksTrain}</span>
           </li>
@@ -126,6 +133,59 @@ function Pairs() {
         ))}
       </ol>
       <p className="note">Orders in 1–21 Nov that contained both products. Top 30 of the 500 pairs kept for the game's hints.</p>
+    </section>
+  );
+}
+
+function Rules() {
+  const { products } = useData();
+  const cats = (Object.keys(CATEGORY) as Category[]).map(c => ({ c, n: products.filter(p => p.category === c).length })).filter(x => x.n);
+  const total = products.reduce((s, p) => s + p.valueTrain, 0);
+  const abc = (['A', 'B', 'C'] as const).map(k => {
+    const ps = products.filter(p => p.abc === k);
+    return { k, n: ps.length, share: ps.reduce((s, p) => s + p.valueTrain, 0) / total };
+  });
+  const fls = Array.from({ length: 8 }, (_, fl) => products.filter(p => p.fl === fl).length);
+  const maxFl = Math.max(...fls);
+  return (
+    <section className="rules-grid">
+      <div className="panel-card">
+        <h3>Categories</h3>
+        <ul className="chips">
+          {cats.map(({ c, n }) => <li key={c} style={{ borderColor: CATEGORY[c].colour }}><span>{CATEGORY[c].icon}</span> {c} <b>{n}</b></li>)}
+        </ul>
+      </div>
+      <div className="panel-card">
+        <h3>Cost class (ABC by sales value)</h3>
+        <div className="abc-bar" aria-label="Share of sales value">
+          {abc.map(a => <i key={a.k} style={{ flex: a.share, background: ABC_COLOUR[a.k] }}>{a.k} {Math.round(a.share * 100)}%</i>)}
+        </div>
+        <p className="note">{abc.map(a => `${a.k}: ${a.n} products, ${Math.round(a.share * 100)}% of value`).join(' · ')}</p>
+      </div>
+      <div className="panel-card">
+        <h3>Forklift / handling level</h3>
+        <div className="fl-hist">
+          {fls.map((n, fl) => (
+            <div key={fl} title={`FL${fl}: ${n} products, ${FL_LABEL(fl)}`}>
+              <i style={{ height: `${(n / maxFl) * 100}%`, background: flColour(fl) }} />
+              <span>FL{fl}</span><small>{n}</small>
+            </div>
+          ))}
+        </div>
+        <p className="note">FL0 is picked by hand; FL1–3 need a trolley; FL{RULES.forkliftFrom}+ need a forklift.</p>
+      </div>
+      <div className="panel-card">
+        <h3>Time rules</h3>
+        <table className="rules-table">
+          <tbody>
+            <tr><th>Walking</th><td>{RULES.walkSpeed} m/s along aisles, never through racks</td></tr>
+            <tr><th>Handling per item</th><td>{RULES.handlingBase} s + {RULES.handlingPerFl} s × FL (FL0 {handlingTime({ ...products[0], fl: 0, abc: 'C' })} s → FL7 {handlingTime({ ...products[0], fl: 7, abc: 'C' })} s)</td></tr>
+            <tr><th>Cost-class check</th><td>A +{RULES.classCheck.A} s (scan and seal) · B +{RULES.classCheck.B} s · C +{RULES.classCheck.C} s</td></tr>
+            <tr><th>Forklift access</th><td>FL {RULES.forkliftFrom}+: +{RULES.accessPerMetre} s per metre from the nearest cross aisle to the shelf</td></tr>
+          </tbody>
+        </table>
+        <p className="note">Walking and forklift access depend on where a product sits, so they are what slotting can improve.</p>
+      </div>
     </section>
   );
 }

@@ -1,5 +1,6 @@
 // Core: loads the JSON contracts from public/data (Plan v2, Section 3.3) and derives what every module shares
 import { baselineLayout, originalLayout, partnersOf } from './engine/layouts';
+import { pickTable } from './engine/rules';
 import type { Affinity, Order, Orders, Product } from './engine/types';
 
 export const REPLAY_ORDERS = 25;
@@ -12,6 +13,7 @@ export type GameData = {
   originalAssign: number[];  // "as received": sorted by StockCode
   baselineAssign: number[];  // fast movers nearest the dock
   sample: Order[];           // replay sample: 25 orders spread across the test week
+  pick: number[][];          // pick[product][slot] = seconds per line (rules.ts)
 };
 
 const get = async <T>(f: string): Promise<T> => {
@@ -33,5 +35,6 @@ export async function loadData(): Promise<GameData> {
     originalAssign: originalLayout(products),
     baselineAssign: baselineLayout(products),
     sample: Array.from({ length: n }, (_, i) => test[Math.floor((i * test.length) / n)]),
+    pick: pickTable(products),
   };
 }

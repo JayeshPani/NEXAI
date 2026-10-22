@@ -17,8 +17,6 @@ export function ReplayControls() {
           </button>
         ))}
       </div>
-      <button className={r.heatmap ? 'on' : ''} aria-pressed={r.heatmap} onClick={r.toggleHeatmap}
-        title="Colour shelves by how often Pip visits them during the replay">Busy shelves</button>
     </div>
   );
 }

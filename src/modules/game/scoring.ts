@@ -1,24 +1,28 @@
-// Kid-friendly scoring: 1 point per metre the picker no longer walks over the whole test week.
-// Star thresholds come from a greedy 10-swap search on the test week (~3,750 m is near perfect).
-export const STAR_THRESHOLDS = [0, 1000, 2500] as const;   // metres saved for 1, 2, 3 stars
-export const FOOTBALL_PITCH = 105;                           // metres
+// Kid-friendly scoring: 1 point per second of work saved over the whole test week
+// (walking + forklift access; see core/engine/rules.ts).
+// Star thresholds come from a greedy 10-swap search on the test week (~6,480 s is near perfect).
+export const STAR_THRESHOLDS = [0, 1500, 4000] as const;   // seconds saved for 1, 2, 3 stars
 
-export const pointsFor = (metresSaved: number) => Math.round(metresSaved);
+export const pointsFor = (secondsSaved: number) => Math.round(secondsSaved);
 
-export function starsFor(metresSaved: number): 0 | 1 | 2 | 3 {
-  if (metresSaved >= STAR_THRESHOLDS[2]) return 3;
-  if (metresSaved >= STAR_THRESHOLDS[1]) return 2;
-  if (metresSaved > STAR_THRESHOLDS[0]) return 1;
+export function starsFor(secondsSaved: number): 0 | 1 | 2 | 3 {
+  if (secondsSaved >= STAR_THRESHOLDS[2]) return 3;
+  if (secondsSaved >= STAR_THRESHOLDS[1]) return 2;
+  if (secondsSaved > STAR_THRESHOLDS[0]) return 1;
   return 0;
 }
 
-// Feedback for one swap; delta is the change in total walking (negative is good)
+// Feedback for one swap; delta is the change in total seconds (negative is good)
 export function swapVerdict(delta: number): { text: string; tone: 'great' | 'good' | 'meh' | 'oops' } {
-  if (delta < -150) return { text: 'Amazing swap!', tone: 'great' };
-  if (delta < -50) return { text: 'Great swap!', tone: 'great' };
+  if (delta < -300) return { text: 'Amazing swap!', tone: 'great' };
+  if (delta < -100) return { text: 'Great swap!', tone: 'great' };
   if (delta < -0.5) return { text: 'Nice!', tone: 'good' };
   if (delta <= 0.5) return { text: 'No change', tone: 'meh' };
-  return { text: 'Oops, more walking', tone: 'oops' };
+  return { text: 'Oops, slower', tone: 'oops' };
 }
 
-export const pitches = (metres: number) => Math.max(0, metres / FOOTBALL_PITCH);
+/** "1 h 48 min" style duration for the end screen */
+export function duration(seconds: number) {
+  const mins = Math.round(Math.max(0, seconds) / 60);
+  return mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${mins} min`;
+}

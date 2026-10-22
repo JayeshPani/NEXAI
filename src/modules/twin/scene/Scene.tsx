@@ -5,14 +5,17 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Vector3 } from 'three';
 import type { Order } from '../../../core/engine/types';
+import { useData } from '../../../core/appStore';
 import { Floor } from './Floor';
 import { Picker } from './Picker';
 import { Racks, type RacksProps } from './Racks';
+import { ShelfFaces } from './ShelfFaces';
 import { CENTER } from './coords';
 
 export function WarehouseScene({ racks, orders, getAssign, children }: {
   racks: RacksProps; orders: Order[]; getAssign: () => number[]; children?: ReactNode;
 }) {
+  const data = useData();
   return (
     <Canvas dpr={[1, 1.5]} camera={{ position: [CENTER[0], 20, 12], fov: 42 }} onPointerMissed={() => racks.onSlotHover?.(null)}>
       <color attach="background" args={['#9adbff']} />
@@ -20,12 +23,13 @@ export function WarehouseScene({ racks, orders, getAssign, children }: {
       <directionalLight position={[8, 20, 10]} intensity={1.6} />
       <Floor />
       <Racks {...racks} />
+      <ShelfFaces at={racks.at} />
       {children}
-      <Picker orders={orders} getAssign={getAssign} />
+      <Picker orders={orders} getAssign={getAssign} pick={data.pick} />
       <FitCamera />
       <OrbitControls
         makeDefault target={CENTER} enablePan={false}
-        minDistance={14} maxDistance={60} minPolarAngle={0.25} maxPolarAngle={1.15}
+        minDistance={7} maxDistance={60} minPolarAngle={0.25} maxPolarAngle={1.15}
       />
     </Canvas>
   );
