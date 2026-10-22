@@ -9,14 +9,15 @@ export const GRID = 10, CELL = 256;
 const FONT = '"Barlow Condensed", "Arial Narrow", system-ui, sans-serif';
 const PHOTO_H = 184;
 
-export function buildCardAtlas(products: Product[]) {
+// onRedraw runs after every redraw: copies of the texture are uploaded separately and must be flagged too
+export function buildCardAtlas(products: Product[], onRedraw: () => void = () => {}) {
   const c = document.createElement('canvas');
   c.width = c.height = GRID * CELL;
   const tex = new CanvasTexture(c);
   tex.colorSpace = SRGBColorSpace;
   tex.anisotropy = 8;
   const photos = new Map<string, HTMLImageElement>();
-  const redraw = () => { draw(c, products, photos); tex.needsUpdate = true; };   // clones share the image
+  const redraw = () => { draw(c, products, photos); tex.needsUpdate = true; onRedraw(); };
   for (const p of products) {
     const src = productImage(p);
     if (photos.has(src)) continue;

@@ -2,6 +2,7 @@
 // Clicking or hovering a card is the same as clicking or hovering its shelf.
 import { useEffect, useMemo } from 'react';
 import { Billboard } from '@react-three/drei';
+import type { Texture } from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useData } from '../../../core/appStore';
 import { RACK_HEIGHT, rackCenter } from './coords';
@@ -15,19 +16,23 @@ export function ShelfCards({ at, selected = null, hovered = null, onSlotClick, o
   onSlotHover?: (slot: number | null, e?: ThreeEvent<PointerEvent>) => void;
 }) {
   const data = useData();
-  const { tex: atlas, redraw } = useMemo(() => buildCardAtlas(data.products), [data.products]);
+  // One texture per product sharing the atlas image. Each copy is uploaded to the GPU separately, so when a
+  // photo (or the font) arrives after the first frame, every copy must be flagged, not only the atlas;
+  // otherwise cards stay blank on a slow or uncached first load.
+  const { atlas, redraw, textures } = useMemo(() => {
+    const copies: Texture[] = [];
+    const { tex, redraw } = buildCardAtlas(data.products, () => copies.forEach(t => { t.needsUpdate = true; }));
+    data.products.forEach(p => {
+      const t = tex.clone();
+      const { offset, repeat } = cellUv(p.id);
+      t.offset.set(...offset); t.repeat.set(...repeat);
+      t.needsUpdate = true;
+      copies.push(t);
+    });
+    return { atlas: tex, redraw, textures: copies };
+  }, [data.products]);
   useEffect(() => { document.fonts.ready.then(redraw); }, [redraw]);   // redraw once the font has loaded
-  useEffect(() => () => atlas.dispose(), [atlas]);
-
-  // One texture per product sharing the atlas image (uploaded once)
-  const textures = useMemo(() => data.products.map(p => {
-    const t = atlas.clone();
-    const { offset, repeat } = cellUv(p.id);
-    t.offset.set(...offset); t.repeat.set(...repeat);
-    t.needsUpdate = true;
-    return t;
-  }), [atlas, data.products]);
-  useEffect(() => () => textures.forEach(t => t.dispose()), [textures]);
+  useEffect(() => () => { atlas.dispose(); textures.forEach(t => t.dispose()); }, [atlas, textures]);
 
   return (
     <group>
