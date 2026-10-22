@@ -139,7 +139,19 @@ jobs:
 
       - name: Promote to production
         if: steps.secrets.outputs.ok == 'true' && env.TARGET == 'production'
-        run: vercel promote "${{ steps.deploy.outputs.url }}" --yes --token="$VERCEL_TOKEN"
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          # REST API instead of `vercel promote`, which failed with "User not found" under a team token
+          api() { curl -sSf -H "Authorization: Bearer $VERCEL_TOKEN" "$@"; }
+          id=$(api "https://api.vercel.com/v13/deployments/${URL#https://}?teamId=$VERCEL_ORG_ID" | jq -r .id)
+          api -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$id?teamId=$VERCEL_ORG_ID" -o /dev/null
+          for _ in $(seq 1 36); do
+            current=$(api "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" | jq -r '.targets.production.id // empty')
+            if [ "$current" = "$id" ]; then echo "Promoted $URL ($id) to production"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::Promotion of $id did not complete within 3 minutes"; exit 1
 
       - name: Comment preview URL on PR
         if: steps.secrets.outputs.ok == 'true' && github.event_name == 'pull_request'
